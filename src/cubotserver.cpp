@@ -311,6 +311,9 @@ void CuBotServer::onMessageReceived(TBotMsg &m)
             QList<AliasEntry> alist = d->bot_db->getAlias(m.user_id, aname);
             d->bot_sender->sendMessage(m.chat_id, MsgFormatter().aliasList(aname, alist));
         }
+        else if(t == TBotMsgDecoder::ShowAlias) {
+
+        }
         else if(t == TBotMsgDecoder::Invalid || t == TBotMsgDecoder::Error) {
             d->bot_sender->sendMessage(m.chat_id, MsgFormatter().error("TBotMsgDecoder", msg_dec.message()));
         }
