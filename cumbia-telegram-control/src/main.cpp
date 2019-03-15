@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
         }
 
         if(parser.isSet(users)) {
-            tc.printUsers();
+            ok = tc.printUsers();
         }
         if(parser.isSet(stats))
             ok = tc.requestStats();

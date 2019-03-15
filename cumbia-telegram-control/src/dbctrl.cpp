@@ -96,8 +96,10 @@ bool DbCtrl::getUserInfo(QList<QMap<QString, QString> > &in_map)
             }
         }
     }
-    if(m_err)
+    if(m_err) {
         m_msg = q.lastQuery() + ":" + q.lastError().text();
+        printf("error msg dbctrl : %s\n", m_msg.toStdString().c_str());
+    }
 
     return !m_err;
 }
