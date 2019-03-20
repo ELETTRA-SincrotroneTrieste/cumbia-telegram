@@ -12,8 +12,10 @@ CuBotVolatileOperations::CuBotVolatileOperations()
 
 CuBotVolatileOperations::~CuBotVolatileOperations()
 {
-    foreach(CuBotVolatileOperation *vop, m_op_map.values())
-        delete vop;
+    foreach(CuBotVolatileOperation *vop, m_op_map.values()) {
+        if(vop->disposeWhenOver())
+            delete vop;
+    }
     m_op_map.clear();
 }
 
@@ -54,7 +56,8 @@ void CuBotVolatileOperations::consume(int chat_id, int moduletype)
         if(i.key() == chat_id) {
             CuBotVolatileOperation *vop = i.value();
             vop->consume(moduletype);
-            if(vop->lifeCount() < 0) {
+            // dispose only if the volatile operation requires so
+            if(vop->disposeWhenOver() && vop->lifeCount() < 0) {
                 i.remove();
                 delete vop;
             }
@@ -87,8 +90,11 @@ void CuBotVolatileOperations::cleanOld()
         CuBotVolatileOperation *vop = i.value();
         if(vop->creationTime().secsTo(now) > vop->ttl()) {
             vop->signalTtlExpired();
-            i.remove();
-            delete vop;
+            // dispose only if the volatile operation requires so
+            if(vop->disposeWhenOver()) {
+                i.remove();
+                delete vop;
+            }
         }
     }
     if(m_op_map.size() == 0)

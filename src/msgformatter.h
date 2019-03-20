@@ -7,7 +7,6 @@ class CuVariant;
 
 #include <QString>
 #include "historyentry.h"
-#include "aliasentry.h"
 #include "tbotmsgdecoder.h" // for Type
 #include "../cumbia-telegram-defs.h"
 
@@ -46,10 +45,6 @@ public:
     QString bookmarkAdded(const HistoryEntry& b) const;
     QString bookmarkRemoved(bool ok) const;
 
-    QString tg_devSearchList(const QStringList& devs) const;
-    QString tg_attSearchList(const QString &devname, const QStringList& devs) const;
-
-    QString errorVolatileSequence(const QStringList &seq) const;
     QString volatileOpExpired(const QString &opnam, const QString &text) const;
 
     QString unauthorized(const QString& username, const char* op_type, const QString& reason) const;
@@ -59,8 +54,6 @@ public:
     QString help(TBotMsgDecoder::Type t) const;
 
     QString aliasInsert(bool success, const QStringList &alias_parts, const QString& additional_message) const;
-
-    QString aliasList(const QString &name, const QList<AliasEntry>& alist) const;
 
     QString botShutdown();
 

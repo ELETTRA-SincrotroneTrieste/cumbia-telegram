@@ -12,6 +12,15 @@ public:
 
     virtual void consume(int module_type) = 0;
 
+    /**
+     * @brief disposeWhenOver return true if VolatileOperations is allowed to delete the object, false otherwise
+     * @return true: CuBotVolatileOperations can delete this operation either when life is over or from within
+     *                CuBotVolatileOperations destructor
+     *
+     * @return false: CuBotVolatileOperations is *never* allowed to delete this operation
+     */
+    virtual bool disposeWhenOver() const = 0;
+
     virtual int lifeCount() const;
 
     virtual int type() const = 0;

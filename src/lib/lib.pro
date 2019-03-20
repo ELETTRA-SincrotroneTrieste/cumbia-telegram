@@ -57,7 +57,8 @@ SOURCES += \
     cuformulaparsehelper.cpp \
     cubotvolatileoperation.cpp \
     cubotvolatileoperations.cpp \
-    historyentry.cpp
+    historyentry.cpp \
+    cubotmodule.cpp
 
 HEADERS += \
     cubotmodule.h \

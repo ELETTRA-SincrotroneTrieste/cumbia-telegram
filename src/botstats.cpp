@@ -1,6 +1,6 @@
 #include "botstats.h"
 #include "botdb.h"
-#include "botmonitor.h"
+#include "botmonitor_mod.h"
 #include <cudata.h>
 #include <QTimer>
 #include <QDateTime>

@@ -1,13 +1,14 @@
 #ifndef BOTPLOTGENERATOR_H
 #define BOTPLOTGENERATOR_H
 
-#include "volatileoperation.h"
+#include <cubotvolatileoperation.h>
 #include <QByteArray>
 #include <vector>
+#include <cubotplugininterface.h>
 
 class CuData;
 
-class BotPlotGenerator : public VolatileOperation
+class BotPlotGenerator : public CuBotVolatileOperation
 {
 public:
     enum Type { PlotGen = 0x04 };
@@ -20,15 +21,18 @@ public:
 
     // VolatileOperation interface
 public:
-    void consume(TBotMsgDecoder::Type t);
+    void consume(int moduletype);
     int type() const;
     QString name() const;
     void signalTtlExpired();
+    bool disposeWhenOver() const;
 
 private:
     std::vector<double> m_data;
     int m_chat_id;
     QString m_source;
+
+public:
 };
 
 #endif // BOTPLOTGENERATOR_H

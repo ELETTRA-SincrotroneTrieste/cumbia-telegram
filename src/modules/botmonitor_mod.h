@@ -114,6 +114,7 @@ public:
     void setConf(BotConfig *conf);
     int decode(const TBotMsg &msg);
     bool process();
+    bool isVolatileOperation() const;
 
 private:
 

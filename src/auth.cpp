@@ -23,28 +23,10 @@ Auth::Auth(BotDb *db, BotConfig *cfg)
  *
  * In case isAuthorized returns false, you can call the method reason to know why.
  */
-bool Auth::isAuthorized(int uid, TBotMsgDecoder::Type t)
+bool Auth::isAuthorized(int uid, const QString& operation)
 {
     m_limit = -1;
     m_reason.clear();
-    QString operation;
-    switch(t) {
-    case TBotMsgDecoder::Host:
-        operation = "host";  // column name in auth_limits
-        break;
-    case TBotMsgDecoder::Monitor:
-    case TBotMsgDecoder::Alert:
-        // column name in auth_limits (with the final `s': alert+monitor)
-        operation = "monitors";
-        break;
-    case TBotMsgDecoder::AttSearch:
-    case TBotMsgDecoder::Search:
-    case TBotMsgDecoder::ReadFromAttList:
-        operation = "dbsearch"; // search Tango database
-        break;
-    default:
-        break;
-    }
     if(m_limit < 0) {
         m_limit = m_db->isAuthorized(uid, operation);
         if(m_limit < 0) {

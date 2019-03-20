@@ -1,7 +1,7 @@
 #ifndef MONITORHELPER_H
 #define MONITORHELPER_H
 
-#include "botmonitor.h"
+#include "botmonitor_mod.h"
 
 class MonitorHelperPrivate;
 

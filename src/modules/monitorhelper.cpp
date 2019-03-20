@@ -1,5 +1,5 @@
 #include "monitorhelper.h"
-#include "botmonitor.h"
+#include "botmonitor_mod.h"
 #include <QMultiMap>
 #include <QSet>
 

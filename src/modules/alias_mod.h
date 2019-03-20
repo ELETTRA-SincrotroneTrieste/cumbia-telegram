@@ -28,7 +28,7 @@ public:
 
     enum Mode { Invalid, SetAlias, ShowAlias, DelAlias, ExecAlias, AliasCmdErr, AliasFindAndReplace, NoOp };
 
-    AliasModule();
+    AliasModule(BotDb *db, BotConfig *conf, CuBotModuleListener *l);
     ~AliasModule();
 
     QString findAndReplace(const QString& in, const QList<AliasEntry>& aliases);
@@ -44,16 +44,13 @@ public:
     QString name() const;
     QString description() const;
     QString help() const;
-    AccessMode needsDb() const;
-    AccessMode needsStats() const;
     void setDb(BotDb *db);
     void setConf(BotConfig *conf);
-    void setOption(const QString &key, const QVariant &value);
     int decode(const TBotMsg &msg);
     bool process();
     bool error() const;
     QString message() const;
-
+    bool isVolatileOperation() const;
 private:
     AliasProcPrivate *d;
 

@@ -178,7 +178,7 @@
 #define __UINT8_TYPE__ unsigned char
 #define __FLT_MANT_DIG__ 24
 #define __LDBL_DECIMAL_DIG__ 21
-#define __VERSION__ "8.3.1 20190317 gcc-8-branch@269736"
+#define __VERSION__ "8.3.1 20190319 gcc-8-branch@269792"
 #define __UINT64_C(c) c ## UL
 #define __cpp_unicode_characters 200704
 #define _STDC_PREDEF_H 1

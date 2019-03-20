@@ -308,46 +308,6 @@ QString MsgFormatter::bookmarkRemoved(bool ok) const
     return s;
 }
 
-QString MsgFormatter::tg_devSearchList(const QStringList &devs) const
-{
-    QString s;
-    if(devs.isEmpty())
-        s = "😞   No device found matching the given pattern";
-    else {
-        s = QString("<b>%1 DEVICES</b>\n\n").arg(devs.size());
-        for(int i = 0; i < devs.size(); i++) {
-            s += QString("%1: <i>" + devs[i] + "</i>   [/attlist%1]\n").arg(i+1);
-        }
-    }
-    return s;
-}
-
-QString MsgFormatter::tg_attSearchList(const QString& devname, const QStringList &atts) const
-{
-    QString s;
-    if(atts.isEmpty())
-        s = "😞   No attributes found within the device <i>" + devname + "</i>\n";
-    else {
-        s = QString("<b>%1 ATTRIBUTES</b> from <i>%2</i>\n\n").arg(atts.size()).arg(devname);
-        for(int i = 0; i < atts.size(); i++) {
-            s += QString("%1: <i>" + atts[i] + "</i>   [/a%1_read]\n").arg(i+1);
-        }
-    }
-    return s;
-}
-
-QString MsgFormatter::errorVolatileSequence(const QStringList &seq) const
-{
-    QString s = "😞   The commands <i> ";
-    for(int i = 0; i < seq.size() -1; i++) {
-        s += seq[i] + ", ";
-    }
-    if(seq.size() > 0)
-        s += seq.last();
-
-    s +=  " </i>\nmust be executed in sequence";
-    return s;
-}
 
 QString MsgFormatter::volatileOpExpired(const QString &opnam, const QString &text) const
 {
@@ -377,51 +337,7 @@ QString MsgFormatter::fromControlData(const ControlMsg::Type t, const QString &m
     return s;
 }
 
-QString MsgFormatter::aliasInsert(bool success, const QStringList& alias_parts, const QString &additional_message) const {
-    QString s;
-    success = success & alias_parts.size() > 2;
-    QString desc, name, replaces;
-    FormulaHelper fh;
-    alias_parts.size() > 2 ? desc = fh.escape(alias_parts[2]) : desc = "";
-    if(alias_parts.size() > 0)
-        name = fh.escape(alias_parts[0]);
-    if(success) {
-        replaces = fh.escape(alias_parts[1]);
-        s += "👍   successfully added alias:\n";
-        s += QString("<b>%1</b> replaces: <i>%2</i>").arg(name).arg(replaces);
-        if(!desc.isEmpty()) {
-            s += "\n<i>" + desc + "</i>";
-        }
-    }
-    else if(alias_parts.size() > 0) {
-        s = "👎   failed to insert alias <b>" + name + "</b>";
-    }
-    if(!additional_message.isEmpty())
-        s += "\n[<i>" + fh.escape(additional_message) + "</i>]";
 
-    return s;
-}
-
-QString MsgFormatter::aliasList(const QString& name, const QList<AliasEntry> &alist) const
-{
-    FormulaHelper fh;
-    QString s;
-    if(alist.isEmpty())  {
-        name.isEmpty()? s += "no alias defined" : s += "no alias defined for <i>" + name + "</i>.";
-    }
-    else {
-        if(name.isEmpty()) s = "<b>alias list</b>\n";
-    }
-    int i = 1;
-    foreach(AliasEntry a, alist) {
-        s += QString("%1. <i>%2 --> %3</i>").arg(i).arg(fh.escape(a.name)).arg(fh.escape(a.replaces));
-        for(int i = 0; i < a.in_history_idxs.size(); i++) {
-            s += QString(" [/A%1] [%2]").arg(a.in_history_idxs[i]).arg(a.in_history_hosts[i]);
-        }
-        a.description.isEmpty() ? s += "\n" : s += "   (" + fh.escape(a.description) + ")\n";
-    }
-    return s;
-}
 
 QString MsgFormatter::botShutdown()
 {

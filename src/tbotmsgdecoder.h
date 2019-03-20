@@ -14,21 +14,19 @@ public:
                 Read, Monitor, Alert, StopMonitor, Properties,
                 ReadHistory, MonitorHistory, AlertHistory,
                 Bookmarks, AddBookmark, DelBookmark,
-                Last, CmdLink, Search, AttSearch, ReadFromAttList,
+                Last, CmdLink,  ReadFromAttList,
                 Plot,
                 // please include HelpXXX entries within Help and HelpSearch
                 Help, HelpMonitor, HelpAlerts, HelpHost, HelpSearch,
-                SetAlias, ShowAlias, DelAlias, ExecAlias,
                 MaxType = 48 };
 
     const char types[MaxType][48] = { "Invalid", "Error", "Start", "Stop", "Host", "QueryHost",
                                       "Read", "Monitor", "Alert", "StopMonitor", "Properties",
                                       "ReadHistory", "MonitorHistory", "AlertHistory",
                                       "Bookmarks", "AddBookmark", "DelBookmark",
-                                      "Last", "CmdLink", "Search", "AttSearch", "ReadFromAttList",
+                                      "Last", "CmdLink", "ReadFromAttList",
                                       "Plot",
                                       "Help", "HelpMonitor", "HelpAlerts", "HelpHost", "HelpSearch",
-                                      "SetAlias", "ShowAlias", "DelAlias", "ExecAlias",
                                       "MaxType" };
 
     TBotMsgDecoder();
@@ -56,8 +54,6 @@ public:
     QStringList getArgs() const;
 
     QStringList detectedSources() const;
-
-    QStringList getAliasSections() const;
 
 private:
 
@@ -87,7 +83,8 @@ private:
 
     QString m_normalizedFormulaPattern;
 
-    QStringList m_detectedSources, m_aliasSections;
+    QStringList m_detectedSources;
+
 };
 
 #endif // TBOTMSGDECODER_H

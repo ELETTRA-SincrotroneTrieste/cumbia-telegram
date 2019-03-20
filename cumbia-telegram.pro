@@ -2,6 +2,12 @@ include(/usr/local/cumbia-libs/include/qumbia-tango-controls/qumbia-tango-contro
 include(/usr/local/cumbia-libs/include/qumbia-epics-controls/qumbia-epics-controls.pri)
 include(/usr/local/cumbia-libs/include/cumbia-qtcontrols/cumbia-qtcontrols.pri)
 
+INSTALL_ROOT = /usr/local/cumbia-telegram
+
+CUMBIA_TELEGRAM_PLUGIN_PATH=$${INSTALL_ROOT}/lib/plugins
+
+DEFINES += CUMBIA_TELEGRAM_PLUGIN_DIR=\"\\\"$${CUMBIA_TELEGRAM_PLUGIN_PATH}\\\"\" \
+
 # for qwt!
 QT += gui
 
@@ -36,7 +42,7 @@ CONFIG -= app_bundle
 DEFINES += QT_DEPRECATED_WARNINGS
 
 
-INCLUDEPATH += src
+INCLUDEPATH += src src/lib src/modules
 
 # You can also make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -47,66 +53,45 @@ SOURCES += \
         src/main.cpp \
     src/cubotserver.cpp \
     src/cubotlistener.cpp \
-    src/botdb.cpp \
-    src/tbotmsg.cpp \
-    src/tbotmsgdecoder.cpp \ 
-	src/botreader.cpp \
+    src/botreader.cpp \
     src/cubotsender.cpp \
     src/cumbiasupervisor.cpp \
     src/msgformatter.cpp \
-    src/botmonitor.cpp \
-    src/formulahelper.cpp \
-    src/historyentry.cpp \
-    src/botconfig.cpp \
-    src/volatileoperation.cpp \
-    src/botsearchtangodev.cpp \
-    src/volatileoperations.cpp \
-    src/botsearchtangoatt.cpp \
     src/botreadquality.cpp \
     src/auth.cpp \
     src/botcontrolserver.cpp \
     src/botstats.cpp \
-    src/botplot.cpp \
-    src/botplotgenerator.cpp \
-    src/cuformulaparsehelper.cpp \
-    src/aliasentry.cpp \
-    src/aliasproc.cpp \
-    src/monitorhelper.cpp
-
-# Default rules for deployment.
-qnx: target.path = /tmp/$${TARGET}/bin
-else: unix:!android: target.path = /opt/$${TARGET}/bin
-!isEmpty(target.path): INSTALLS += target
+    src/modules/botplot.cpp \
+    src/modules/botplotgenerator.cpp \
+    src/modules/monitorhelper.cpp \
+    src/tbotmsgdecoder.cpp \
+    src/modules/botmonitor_msgdecoder.cpp \
+    src/modules/alias_mod.cpp \
+    src/cubotserverevents.cpp \
+    src/modules/botmonitor_mod.cpp \
+    src/modules/botreader_mod.cpp
 
 HEADERS += \
     src/cubotserver.h \
     src/cubotlistener.h \
-    src/botdb.h \
-    src/tbotmsg.h \
     src/tbotmsgdecoder.h \ 
 	src/botreader.h \
     src/cubotsender.h \
     src/cumbiasupervisor.h \
     src/msgformatter.h \
-    src/botmonitor.h \
-    src/formulahelper.h \
-    src/historyentry.h \
-    src/botconfig.h \
-    src/volatileoperation.h \
-    src/botsearchtangodev.h \
-    src/volatileoperations.h \
-    src/botsearchtangoatt.h \
     src/botreadquality.h \
     src/auth.h \
     cumbia-telegram-defs.h \
     src/botcontrolserver.h \
     src/botstats.h \
-    src/botplot.h \
-    src/botplotgenerator.h \
-    src/cuformulaparsehelper.h \
-    src/aliasentry.h \
-    src/aliasproc.h \
-    src/monitorhelper.h
+    src/modules/botplot.h \
+    src/modules/botplotgenerator.h \
+    src/modules/monitorhelper.h \
+    src/modules/botmonitor_msgdecoder.h \
+    src/modules/alias_mod.h \
+    src/cubotserverevents.h \
+    src/modules/botmonitor_mod.h \
+    src/modules/botreader_mod.h
 
 RESOURCES += \
     cumbia-telegram.qrc
@@ -118,3 +103,22 @@ DISTFILES += \
     res/help_search.html \
     res/help_host.html \
     CumbiaBot_elettra_token.txt
+
+
+inc.files = \
+    src/tbotmsgdecoder.h \
+    src/cubotplugininterface.h \
+    src/cubotmodule.h \
+    src/cubotvolatileoperation.h \
+    src/cubotvolatileoperations.h
+
+message ("install root $${INSTALL_ROOT}")
+
+inc.path = $${INSTALL_ROOT}/include
+
+inst.files = $${TARGET}
+inst.path = $${INSTALL_ROOT}/bin
+
+LIBS += -L$${INSTALL_ROOT}/lib -lcumbia-telegram
+
+INSTALLS += inc inst

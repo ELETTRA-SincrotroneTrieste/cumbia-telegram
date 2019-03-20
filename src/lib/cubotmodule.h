@@ -6,6 +6,7 @@ class QString;
 class BotStats;
 class BotConfig;
 class QSqlDatabase;
+class CuData;
 
 #include <tbotmsg.h>
 #include <cubotvolatileoperation.h>
@@ -21,11 +22,14 @@ public:
                                       bool wait_for_reply = false) = 0;
 
     virtual void onReplaceVolatileOperationRequest(int chat_id, CuBotVolatileOperation *vo) = 0;
+    virtual void onAddVolatileOperationRequest(int chat_id, CuBotVolatileOperation *vo) = 0;
 
     virtual void onReinjectMessage(const TBotMsg& msg_mod) = 0;
 
-
+    virtual void onStatsUpdateRequest(int chat_id, const CuData& data) = 0;
 };
+
+class CuBotModulePrivate;
 
 class CuBotModule
 {
@@ -33,9 +37,19 @@ public:
 
     enum AccessMode { None, Read, ReadWrite };
 
-    virtual ~CuBotModule() { }
+    CuBotModule();
 
-    virtual void setBotmoduleListener(CuBotModuleListener *l) = 0;
+    CuBotModule(CuBotModuleListener *lis, BotDb *db = nullptr, BotConfig *conf = nullptr);
+
+    virtual ~CuBotModule();
+
+    virtual void setBotmoduleListener(CuBotModuleListener *l);
+
+    virtual void setDb(BotDb *db);
+
+    virtual void setConf(BotConfig *conf);
+
+    virtual void setOption(const QString& key, const QVariant& value);
 
     virtual int type() const = 0;
 
@@ -45,15 +59,17 @@ public:
 
     virtual QString help() const = 0;
 
-    virtual AccessMode needsDb() const = 0;
+    virtual bool isVolatileOperation() const = 0;
 
-    virtual AccessMode needsStats() const = 0;
 
-    virtual void setDb(BotDb *db) = 0;
+    CuBotModuleListener *getModuleListener() const;
 
-    virtual void setConf(BotConfig *conf) = 0;
+    BotDb* getDb() const;
 
-    virtual void setOption(const QString& key, const QVariant& value) = 0;
+    BotConfig *getBotConfig() const;
+
+    QVariant getOption(const QString& key) const;
+
 
     /** \brief returns the type of the module if msg has been successfully decoded
      *
@@ -93,6 +109,11 @@ public:
      * @see error
      */
     virtual QString message() const = 0;
+
+    bool isPlugin() const;
+
+private:
+    CuBotModulePrivate *d;
 };
 
 #endif // CUBOTMODULE_H

@@ -6,6 +6,7 @@
 #include <tbotmsgdecoder.h>
 #include <botdb.h>
 #include <botreader.h> // for BotReader::RefreshMode
+#include "cubotmodule.h"
 
 #include "../cumbia-telegram-defs.h" // for ControlMsg::Type
 
@@ -14,7 +15,7 @@ class QJsonValue;
 class CuData;
 class QLocalSocket;
 
-class CuBotServer : public QObject
+class CuBotServer : public QObject, public CuBotModuleListener
 {
     Q_OBJECT
 public:
@@ -24,30 +25,15 @@ public:
 
     bool isRunning() const;
 
+protected:
+    bool event(QEvent *e);
+
 signals:
 
 private slots:
-    void onMessageReceived(TBotMsg &m);
+    void onMessageReceived(const TBotMsg &m);
 
     void onReaderUpdate(int chat_id, const CuData& d);
-
-    void onNewMonitorData(int chat_id, const CuData& da);
-
-    void onSrcMonitorStopped(int user_id, int chat_id, const QString& src, const QString& host, const QString& message);
-
-    void onSrcMonitorStarted(int user_id, int chat_id, const QString& src, const QString &host, const QString &formula);
-
-    void onSrcMonitorStartError(int chat_id, const QString& src, const QString& message);
-
-    void onSrcMonitorFormulaChanged(int user_id, int chat_id, const QString &new_s,
-                                    const QString &host, const QString &old, const QString &new_f);
-
-    void onSrcMonitorTypeChanged(int user_id, int chat_id, const QString& src,
-                                 const QString& host, const QString& old_type, const QString& new_type);
-
-    void onTgDevListSearchReady(int chat_id , const QStringList& devs);
-
-    void onTgAttListSearchReady(int chat_id, const QString& devname, const QStringList& atts);
 
     void onVolatileOperationExpired(int chat_id, const QString& opnam, const QString& text);
 
@@ -68,6 +54,10 @@ private:
     void setupCumbia();
     void disposeCumbia();
 
+    void m_loadModules();
+
+    void m_loadPlugins();
+
     void m_setupMonitor();
 
     bool m_saveProcs();
@@ -81,8 +71,17 @@ private:
 
     bool m_isBigSizeVector(const CuData &da) const;
 
-    QString m_getHost(int chat_id, const QString& src = QString());
 
+    // CuBotModuleListener interface
+public:
+    void onSendMessageRequest(int chat_id, const QString &msg, bool silent, bool wait_for_reply);
+    void onReplaceVolatileOperationRequest(int chat_id, CuBotVolatileOperation *vo);
+    void onAddVolatileOperationRequest(int chat_id, CuBotVolatileOperation *vo);
+    void onStatsUpdateRequest(int chat_id, const CuData& data);
+
+    // CuBotModuleListener interface
+public:
+    void onReinjectMessage(const TBotMsg &msg_mod);
 };
 
 #endif // CUBOTSERVER_H

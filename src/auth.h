@@ -11,7 +11,7 @@ class Auth
 public:
     Auth(BotDb *db, BotConfig *cfg);
 
-    bool isAuthorized(int uid, TBotMsgDecoder::Type t);
+    bool isAuthorized(int uid, const QString &operation);
 
     int limit() const;
 

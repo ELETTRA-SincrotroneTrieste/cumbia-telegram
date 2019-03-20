@@ -22,7 +22,7 @@ public slots:
     void stop();
 
 signals:
-    void onNewMessage(TBotMsg &msg);
+    void onNewMessage(const TBotMsg &msg);
 
     void onError(const QString& src, const QString& message);
 

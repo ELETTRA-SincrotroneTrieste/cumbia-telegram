@@ -9,6 +9,12 @@ class CuBotPluginInterface : public CuBotModule
 {
 public:
     virtual ~CuBotPluginInterface() {}
+
+    virtual void init(CuBotModuleListener *listener, BotDb *db = nullptr, BotConfig *bot_conf = nullptr) = 0;
+
+    bool isPlugin() const {
+        return true;
+    }
 };
 
 #define CuBotPluginInterface_iid "eu.elettra.cumbia-telegram.CuBotPluginInterface"

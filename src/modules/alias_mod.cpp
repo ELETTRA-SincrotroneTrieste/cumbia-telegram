@@ -40,16 +40,19 @@ void AliasModule::reset() {
     d->out.clear();
 }
 
-AliasModule::AliasModule()
+AliasModule::AliasModule(BotDb *db, BotConfig *conf, CuBotModuleListener *l)
+    : CuBotModule(l, db, conf)
 {
     d = new AliasProcPrivate;
     reset();
+    setDb(db);
+    setConf(conf);
+    setBotmoduleListener(l);
 }
 
 AliasModule::~AliasModule(){
     delete d;
 }
-
 
 /**
  * @brief BotDb::getAlias returns the list of aliases for the given user id and optional alias name
@@ -136,16 +139,6 @@ QString AliasModule::help() const
     return QString();
 }
 
-CuBotModule::AccessMode AliasModule::needsDb() const
-{
-    return CuBotModule::ReadWrite;
-}
-
-CuBotModule::AccessMode AliasModule::needsStats() const
-{
-    return CuBotModule::None;
-}
-
 void AliasModule::setDb(BotDb *db)
 {
     bool err = false;
@@ -163,10 +156,6 @@ void AliasModule::setDb(BotDb *db)
 void AliasModule::setConf(BotConfig *conf)
 {
     d->bot_conf = conf;
-}
-
-void AliasModule::setOption(const QString &key, const QVariant &value)
-{
 }
 
 int AliasModule::decode(const TBotMsg &msg)
@@ -279,6 +268,11 @@ bool AliasModule::error() const
 QString AliasModule::message() const
 {
     return d->msg;
+}
+
+bool AliasModule::isVolatileOperation() const
+{
+    return false;
 }
 
 bool AliasModule::m_db_insertAlias(int user_id, const QStringList &parts, int max_alias_cnt)

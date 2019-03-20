@@ -25,7 +25,7 @@ QByteArray BotPlotGenerator::generate() const
 }
 
 
-void BotPlotGenerator::consume(TBotMsgDecoder::Type t)
+void BotPlotGenerator::consume(int moduletype)
 {
     d_life_cnt--;
 }
@@ -42,4 +42,10 @@ QString BotPlotGenerator::name() const
 
 void BotPlotGenerator::signalTtlExpired()
 {
+}
+
+
+bool BotPlotGenerator::disposeWhenOver() const
+{
+    return true;
 }

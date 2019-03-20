@@ -1,4 +1,4 @@
-#include "botmonitor.h"
+#include "botmonitor_mod.h"
 #include "botconfig.h"
 #include "monitorhelper.h"
 #include <QString>
@@ -492,6 +492,10 @@ bool BotMonitor::process()
     return success;
 }
 
+bool BotMonitor::isVolatileOperation() const
+{
+    return false;
+}
 
 bool BotMonitor::m_isBigSizeVector(const CuData &da) const
 {
