@@ -12,7 +12,7 @@ public:
 
     virtual void init(CuBotModuleListener *listener, BotDb *db = nullptr, BotConfig *bot_conf = nullptr) = 0;
 
-    bool isPlugin() const {
+    virtual bool isPlugin() const {
         return true;
     }
 };

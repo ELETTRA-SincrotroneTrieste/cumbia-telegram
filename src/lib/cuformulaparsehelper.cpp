@@ -58,7 +58,7 @@ QString CuFormulaParseHelper::toNormalizedForm(const QString &f) const
                                  "}").arg(function_body);
 
         norm += function_decl + function_body;
-        qDebug() << __PRETTY_FUNCTION__ << "pattern" << pattern <<  "matched sources " << srcs;
+        qDebug() << __PRETTY_FUNCTION__ << "input" << f << "pattern" << pattern <<  "matched sources " << srcs;
         qDebug() << __PRETTY_FUNCTION__ <<  "normalized to"     << norm;
     }
     else {

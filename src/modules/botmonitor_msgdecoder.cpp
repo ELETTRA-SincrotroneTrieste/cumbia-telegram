@@ -1,54 +1,52 @@
 #include "botmonitor_msgdecoder.h"
-#include "tbotmsg.h"
-#include "cuformulaparsehelper.h"
+#include "../lib/tbotmsg.h"
+#include "../lib/cuformulaparsehelper.h"
 
 #include <QString>
 #include <QtDebug>
 #include <QRegularExpression>
 #include <cutango-world.h>
 
-BotMonitorMsgDecoder::BotMonitorMsgDecoder()
-{
+BotMonitorMsgDecoder::BotMonitorMsgDecoder() {
     m_type = Invalid;
     m_cmdLinkIdx = -1;
     m_chat_id = m_user_id = -1;
 }
 
-void BotMonitorMsgDecoder::setNormalizedFormulaPattern(const QString &nfp)
-{
+void BotMonitorMsgDecoder::setNormalizedFormulaPattern(const QString &nfp) {
     m_normalizedFormulaPattern = nfp;
 }
 
-BotMonitorMsgDecoder::Type BotMonitorMsgDecoder::type() const
-{
+BotMonitorMsgDecoder::Type BotMonitorMsgDecoder::type() const {
     return m_type;
 }
 
-bool BotMonitorMsgDecoder::hasHost() const
-{
+bool BotMonitorMsgDecoder::hasHost() const {
     return m_host.size() > 0;
 }
 
-QString BotMonitorMsgDecoder::host() const
-{
+QString BotMonitorMsgDecoder::host() const {
     return m_host;
 }
 
-QString BotMonitorMsgDecoder::source() const
-{
+QString BotMonitorMsgDecoder::source() const {
     return m_source;
 }
 
-QString BotMonitorMsgDecoder::text() const
-{
+QString BotMonitorMsgDecoder::text() const {
     return m_text;
 }
 
-BotMonitorMsgDecoder::Type BotMonitorMsgDecoder::decode(const TBotMsg &msg)
-{
+BotMonitorMsgDecoder::Type BotMonitorMsgDecoder::decode(const TBotMsg &msg) {
     m_cmdLinkIdx = -1;
     m_type = Invalid;
     m_text = msg.text();
+    m_host = msg.host();
+    m_text.replace(QRegularExpression("\\s+"), " ");
+    m_chat_id = msg.chat_id;
+    m_user_id = msg.user_id;
+    m_startDt = msg.start_dt;
+
     QRegularExpression re;
     QRegularExpressionMatch match;
     printf("BotMonitorMsgDecoder: decoding \"%s\" ...\n", qstoc(m_text));
@@ -66,34 +64,27 @@ BotMonitorMsgDecoder::Type BotMonitorMsgDecoder::decode(const TBotMsg &msg)
             m_type = StopMonitor;
         }
     }
-
     if(m_type == Invalid)
         m_type = m_decodeSrcCmd(m_text.trimmed());
-
-    m_chat_id = msg.chat_id;
-    m_user_id = msg.user_id;
-    m_startDt = msg.start_dt;
-
-    printf("BotMonitorMsgDecoder: decoded %d from \"%s\" idx %d\n", m_type, qstoc(m_text), m_cmdLinkIdx);
     return m_type;
 }
 
-int BotMonitorMsgDecoder::cmdLinkIdx() const
-{
+int BotMonitorMsgDecoder::cmdLinkIdx() const {
     return m_cmdLinkIdx;
 }
 
-BotMonitorMsgDecoder::Type BotMonitorMsgDecoder::m_decodeSrcCmd(const QString &txt)
-{
+BotMonitorMsgDecoder::Type BotMonitorMsgDecoder::m_decodeSrcCmd(const QString &txt) {
     m_type = Invalid;
     QStringList cmd_parts = txt.split(QRegExp("\\s+"), QString::SkipEmptyParts);
     m_type = m_StrToCmdType(txt);
+    printf("\e[0;34mtryDecodeFrmula decoded type is %d\e[0m\n", m_type);
     if(m_type != Invalid)  {
         // monitor|stop or some other action on tango source
         QString restOfLine;
         for(int i = 1; i < cmd_parts.size(); i++) {
             i < cmd_parts.size() - 1 ? restOfLine += cmd_parts[i] + " " : restOfLine += cmd_parts[i];
         }
+        printf("\e[0;34mtryDecodeFrmula with rest of line %s\e[0m\n", qstoc(restOfLine));
         m_tryDecodeFormula(restOfLine); // find source in second param
         if((m_type == Monitor || m_type == Alert ) && m_detectedSources.size() == 0) {
             // no monitor without real sources
@@ -105,8 +96,7 @@ BotMonitorMsgDecoder::Type BotMonitorMsgDecoder::m_decodeSrcCmd(const QString &t
     return m_type;
 }
 
-bool BotMonitorMsgDecoder::m_tryDecodeFormula(const QString &text)
-{
+bool BotMonitorMsgDecoder::m_tryDecodeFormula(const QString &text) {
     bool is_formula = true;
     // text does not start with either monitor or alarm
     m_source = QString();
@@ -129,34 +119,27 @@ BotMonitorMsgDecoder::Type BotMonitorMsgDecoder::m_StrToCmdType(const QString &c
     return Invalid;
 }
 
-
-QStringList BotMonitorMsgDecoder::detectedSources() const
-{
+QStringList BotMonitorMsgDecoder::detectedSources() const {
     return m_detectedSources;
 }
 
-int BotMonitorMsgDecoder::chatId() const
-{
+int BotMonitorMsgDecoder::chatId() const {
     return m_chat_id;
 }
 
-int BotMonitorMsgDecoder::userId() const
-{
+int BotMonitorMsgDecoder::userId() const {
     return m_user_id;
 }
 
-QDateTime BotMonitorMsgDecoder::startDateTime() const
-{
+QDateTime BotMonitorMsgDecoder::startDateTime() const {
     return m_startDt;
 }
 
-bool BotMonitorMsgDecoder::error() const
-{
+bool BotMonitorMsgDecoder::error() const {
     return m_type == Invalid;
 }
 
-QString BotMonitorMsgDecoder::message() const
-{
+QString BotMonitorMsgDecoder::message() const {
     return m_msg;
 }
 
@@ -170,8 +153,7 @@ QString BotMonitorMsgDecoder::message() const
  * \par example
  * Running m_getArgs on  "stop double_scalar long_scalar" would return QStringList("double_scalar", "long_scalar")
  */
-QStringList BotMonitorMsgDecoder::getArgs() const
-{
+QStringList BotMonitorMsgDecoder::getArgs() const {
     QStringList a(m_text.split(QRegExp("\\s+")));
     a.removeAt(0);
     return a;

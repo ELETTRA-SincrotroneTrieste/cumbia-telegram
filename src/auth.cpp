@@ -1,6 +1,6 @@
 #include "auth.h"
-#include "botdb.h"
-#include "botconfig.h"
+#include "lib/botdb.h"
+#include "lib/botconfig.h"
 
 Auth::Auth(BotDb *db, BotConfig *cfg)
 {

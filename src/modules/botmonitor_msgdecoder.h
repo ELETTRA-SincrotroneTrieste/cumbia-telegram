@@ -14,6 +14,7 @@ public:
     enum Type { Invalid, Monitor, Alert, StopMonitor, CmdLink, MaxType = 16 };
 
     const char types[MaxType][48] = { "Invalid",  "Monitor", "Alert", "StopMonitor",
+                                      "CmdLink",
                                       "MaxType" };
 
     BotMonitorMsgDecoder();
@@ -53,17 +54,11 @@ public:
 private:
 
     bool m_tryDecodeFormula(const QString& text);
-
     Type m_decodeSrcCmd(const QString& text);
-
     Type m_StrToCmdType(const QString& cmd);
-
     QString m_findSource(const QString& text);
-
     QString m_findDevice(const QString &text);
-
     QString m_findByPatterns(const QString& text, const QStringList &patterns);
-
     QString m_getFormula(const QString& f);
 
     Type m_type;

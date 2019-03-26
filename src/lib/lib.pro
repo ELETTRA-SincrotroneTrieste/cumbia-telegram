@@ -49,6 +49,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
+UNIX:INCLUDEPATH += .
+
 SOURCES += \
     botdb.cpp \
     tbotmsg.cpp \
@@ -58,9 +60,19 @@ SOURCES += \
     cubotvolatileoperation.cpp \
     cubotvolatileoperations.cpp \
     historyentry.cpp \
-    cubotmodule.cpp
+    cubotmodule.cpp \
+    botreadquality.cpp \
+    botreader.cpp \
+    datamsgformatter.cpp \
+    cumbiasupervisor.cpp \
+    botplot.cpp \
+    botplotgenerator.cpp \
+    generic_msgformatter.cpp \
+    hostentry.cpp
 
 HEADERS += \
+# this must be installed also
+    cumbia-telegram-defs.h \
     cubotmodule.h \
     cubotplugininterface.h \
     botdb.h \
@@ -70,10 +82,15 @@ HEADERS += \
     cuformulaparsehelper.h \
     cubotvolatileoperation.h \
     cubotvolatileoperations.h \
-    historyentry.h
-
-
-
+    historyentry.h \
+    botreadquality.h \
+    botreader.h \
+    datamsgformatter.h \
+    cumbiasupervisor.h \
+    botplot.h \
+    botplotgenerator.h \
+    generic_msgformatter.h \
+    hostentry.h
 
 inc.files = $${HEADERS}
 

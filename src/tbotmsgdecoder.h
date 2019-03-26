@@ -49,8 +49,6 @@ public:
 
     QString message() const;
 
-    QString toHistoryTableType( Type t) const;
-
     QStringList getArgs() const;
 
     QStringList detectedSources() const;

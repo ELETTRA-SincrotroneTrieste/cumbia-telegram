@@ -62,5 +62,6 @@ QString FormulaHelper::escape(const QString &formula) const
     s.replace(">", "%26#62;"); // > sign
     s.replace("?", "%26#63;");
     s.replace("&", "%26#38;");
+    s.replace("°", "%26#176;"); // degree symbol
     return s;
 }

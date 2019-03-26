@@ -53,45 +53,42 @@ SOURCES += \
         src/main.cpp \
     src/cubotserver.cpp \
     src/cubotlistener.cpp \
-    src/botreader.cpp \
     src/cubotsender.cpp \
-    src/cumbiasupervisor.cpp \
-    src/msgformatter.cpp \
-    src/botreadquality.cpp \
     src/auth.cpp \
     src/botcontrolserver.cpp \
     src/botstats.cpp \
-    src/modules/botplot.cpp \
-    src/modules/botplotgenerator.cpp \
     src/modules/monitorhelper.cpp \
     src/tbotmsgdecoder.cpp \
     src/modules/botmonitor_msgdecoder.cpp \
     src/modules/alias_mod.cpp \
     src/cubotserverevents.cpp \
     src/modules/botmonitor_mod.cpp \
-    src/modules/botreader_mod.cpp
+    src/modules/botreader_mod.cpp \
+    src/modules/moduleutils.cpp \
+    src/modules/botmonitor_mod_msgformatter.cpp \
+    src/modules/host_mod.cpp \
+    src/modules/help_mod.cpp
 
 HEADERS += \
     src/cubotserver.h \
     src/cubotlistener.h \
     src/tbotmsgdecoder.h \ 
-	src/botreader.h \
     src/cubotsender.h \
-    src/cumbiasupervisor.h \
-    src/msgformatter.h \
-    src/botreadquality.h \
     src/auth.h \
-    cumbia-telegram-defs.h \
     src/botcontrolserver.h \
     src/botstats.h \
-    src/modules/botplot.h \
-    src/modules/botplotgenerator.h \
     src/modules/monitorhelper.h \
     src/modules/botmonitor_msgdecoder.h \
     src/modules/alias_mod.h \
     src/cubotserverevents.h \
     src/modules/botmonitor_mod.h \
-    src/modules/botreader_mod.h
+    src/modules/botreader_mod.h \
+    src/modules/moduleutils.h \
+    src/modules/botmonitor_mod_msgformatter.h \
+    src/modules/host_mod.h \
+    \
+    src/lib/cumbia-telegram-defs.h \
+    src/modules/help_mod.h
 
 RESOURCES += \
     cumbia-telegram.qrc
@@ -105,20 +102,11 @@ DISTFILES += \
     CumbiaBot_elettra_token.txt
 
 
-inc.files = \
-    src/tbotmsgdecoder.h \
-    src/cubotplugininterface.h \
-    src/cubotmodule.h \
-    src/cubotvolatileoperation.h \
-    src/cubotvolatileoperations.h
-
 message ("install root $${INSTALL_ROOT}")
-
-inc.path = $${INSTALL_ROOT}/include
 
 inst.files = $${TARGET}
 inst.path = $${INSTALL_ROOT}/bin
 
 LIBS += -L$${INSTALL_ROOT}/lib -lcumbia-telegram
 
-INSTALLS += inc inst
+INSTALLS += inst

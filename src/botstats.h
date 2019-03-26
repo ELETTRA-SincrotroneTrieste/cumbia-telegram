@@ -17,7 +17,7 @@ class BotStats : public QObject
 public:
     explicit BotStats(QObject *parent);
 
-    void addRead(int chat_id, const CuData& dat);
+    void add(int chat_id, const CuData& dat);
 
     void setAlarmRate(unsigned int count);
 

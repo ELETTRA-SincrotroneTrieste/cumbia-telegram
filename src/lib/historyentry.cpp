@@ -1,4 +1,6 @@
 #include "historyentry.h"
+#include "formulahelper.h"
+#include "generic_msgformatter.h"
 
 /**
  * @brief HistoryEntry::HistoryEntry
@@ -75,6 +77,51 @@ void HistoryEntry::fromDbProc(int u_id, int chatid, const QString& nam, const QS
     host = hos;
     datetime = dt;
     index = -1;
+}
+
+QString HistoryEntry::formatEntry_msg(int idx, int ttl, bool is_bookmark) const
+{
+    QString msg;
+    // 1. type + source [+formula if not empty]
+    msg += QString::number(idx+1) + ". "; // numbered list
+    QString cmd = command;
+    cmd = FormulaHelper().escape(cmd);
+    msg += "<i>" + cmd + "</i>";
+
+    // if bookmark add remove link
+    is_bookmark ? msg += QString("   /XB%1\n").arg(index) : msg += "\n";
+
+    // 2. if monitor or alert, print stop date and make link to restart if
+    //    no more active
+    if(type == "monitor" || type == "alert") {
+        if(is_active) {
+            QDateTime stop = datetime.addSecs(ttl);
+            msg += "<b>active</b> until ";
+            msg += "<i>" + GenMsgFormatter().timeRepr(stop) + "</i>";
+        }
+        else {
+             msg += "inactive since " + GenMsgFormatter().timeRepr(stop_datetime);
+        }
+
+        // stop active monitor by link command
+        if(is_active && index > -1)
+            msg += QString(" stop [/X%1]").arg(index);
+
+        msg += "\n";
+        if(!is_active) {
+            msg += QString("/%1%2 (<i>restart %1").arg(type).arg(index);
+            hasHost() ? msg += "[" + host + "]</i>)" : msg += "</i>)";
+        }
+    }
+    else { // one shot read: print date and time
+        msg += "<i>" +  GenMsgFormatter().timeRepr(datetime) + "</i>\n";
+        msg += "/read" + QString::number(index);
+        if(!host.isEmpty())
+            msg += " (" + host + ")";
+    }
+    msg+="\n\n";
+
+    return msg;
 }
 
 QString HistoryEntry::toCommand() const

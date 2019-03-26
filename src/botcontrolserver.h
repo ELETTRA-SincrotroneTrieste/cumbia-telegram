@@ -3,7 +3,7 @@
 
 #include <QObject>
 
-#include "../cumbia-telegram-defs.h" // LOCALSERVER_NAME
+#include "lib/cumbia-telegram-defs.h" // LOCALSERVER_NAME
 
 class BotControlServerPrivate;
 class QLocalSocket;

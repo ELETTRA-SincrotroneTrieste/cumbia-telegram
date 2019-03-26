@@ -41,7 +41,10 @@ void CuBotVolatileOperations::replaceOperation(int chat_id, CuBotVolatileOperati
             CuBotVolatileOperation *vop = i.value();
             if(vop->type() == op->type()) {
                 i.remove();
-                delete vop;
+                if(vop->disposeWhenOver()) {
+                    printf("\e[1;31mCuBotVolatileOperations.replaceOperation: disposing op %p type %d\e[0m\n", vop, vop->type());
+                    delete vop;
+                }
             }
         }
     }
@@ -58,6 +61,7 @@ void CuBotVolatileOperations::consume(int chat_id, int moduletype)
             vop->consume(moduletype);
             // dispose only if the volatile operation requires so
             if(vop->disposeWhenOver() && vop->lifeCount() < 0) {
+                printf("\e[1;31mCuBotVolatileOperations::cleanOld: removing and deleting %p\e[0m\n", vop);
                 i.remove();
                 delete vop;
             }
@@ -92,6 +96,7 @@ void CuBotVolatileOperations::cleanOld()
             vop->signalTtlExpired();
             // dispose only if the volatile operation requires so
             if(vop->disposeWhenOver()) {
+                printf("\e[1;31mCuBotVolatileOperations::cleanOld: removing and deleting %p\e[0m\n", vop);
                 i.remove();
                 delete vop;
             }

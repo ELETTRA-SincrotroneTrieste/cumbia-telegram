@@ -1,6 +1,7 @@
 #include "botstats.h"
-#include "botdb.h"
-#include "botmonitor_mod.h"
+#include "lib/botdb.h"
+#include "lib/botreader.h"
+#include "modules/botmonitor_mod.h"
 #include <cudata.h>
 #include <QTimer>
 #include <QDateTime>
@@ -40,7 +41,7 @@ void BotStats::reset()
     d->peak_dt = d->start_dt;
 }
 
-void BotStats::addRead(int chat_id, const CuData &dat)
+void BotStats::add(int chat_id, const CuData &dat)
 {
     d->r_cnt++;
     d->r_cnt_per_sec++;

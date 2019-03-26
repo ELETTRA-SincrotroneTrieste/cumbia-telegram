@@ -7,8 +7,8 @@
 #include <cudata.h>
 
 #include <QString>
-class QContextMenuEvent;
 
+class QContextMenuEvent;
 class BotReaderPrivate;
 class Cumbia;
 class CumbiaPool;
@@ -146,9 +146,9 @@ public slots:
 signals:
     void newData(int chat_id, const CuData&);
     void lastUpdate(int chat_id, const CuData&);
-    void startSuccess(int user_id, int chat_it, const QString& src, const QString& command);
+    void startSuccess(int user_id, int chat_it, const QString& src, const QString& formula, const QString& host);
     void formulaChanged(int user_id, int chat_id, const QString& src, const QString& oldf, const QString& new_f, const QString& host);
-    void priorityChanged(int chat_id, const QString& src, BotReader::Priority oldpri, BotReader::Priority newpri);
+    void priorityChanged(int user_id, int chat_id, const QString& src, BotReader::Priority oldpri, BotReader::Priority newpri, const QString& host);
     void modeChanged(BotReader::RefreshMode rm);
 
 protected:

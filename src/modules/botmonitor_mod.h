@@ -2,9 +2,11 @@
 #define BOTMONITOR_H
 
 #include <QObject>
-#include <botreader.h>
 #include <QDateTime>
-#include <cubotmodule.h>
+
+#include "lib/botreader.h"
+#include "lib/cubotmodule.h"
+#include "botmonitor_msgdecoder.h"
 
 class CuData;
 class QString;
@@ -39,7 +41,7 @@ public:
 
 signals:
 
-    void stopped(int user_id, int chat_id, const QString& src, const QString& host, const QString& message);
+    void stopped(int user_id, int chat_id, const QString& src, const QString& command, const QString& host, const QString& message);
 
     void started(int user_id, int chat_id, const QString& src, const QString& host, const QString& formula);
 
@@ -48,7 +50,6 @@ signals:
     void newMonitorData(int chat_id, const CuData& data);
 
     void onFormulaChanged(int user_id, int chat_id, const QString& src, const QString& host, const QString& old, const QString& new_f);
-    void onMonitorTypeChanged(int user_id, int chat_id, const QString& src, const QString& host, const QString& old_t, const QString& new_t);
 
     void readerRefreshModeChanged(int user_id, int chat_id, const QString &src, const QString &host,  BotReader::RefreshMode);
 
@@ -64,8 +65,6 @@ public slots:
                       const QString& host = QString(),
                       const QDateTime& startedOn = QDateTime());
 
-    void readerStartSuccess(int user_id, int chat_id, const QString& src, const QString& formula);
-
 private:
     BotMonitorPrivate *d;
 
@@ -74,34 +73,33 @@ private slots:
 
     void m_onFormulaChanged(int user_id, int chat_id, const QString &src, const QString &old, const QString &new_f, const QString& host);
 
-    void m_onPriorityChanged(int chat_id, const QString& src,
-                                BotReader::Priority oldpri, BotReader::Priority newpri);
+    int m_onPriorityChanged(int user_id, int chat_id,
+                             const QString& oldcmd,
+                             const QString& newcmd,
+                            BotReader::Priority newpri,
+                             const QString &host);
+
+    void m_onAlreadyMonitoring(int chat_id, const QString& cmd, const QString& host);
 
     void m_onLastUpdate(int chat_id, const CuData& dat);
 
-    int m_findIndexForNewReader(int chat_id);
+//    int m_findIndexForNewReader(int chat_id);
 
     void m_onReaderModeChanged(BotReader::RefreshMode rm);
 
 
     void onNewMonitorData(int chat_id, const CuData& da);
 
-    void onSrcMonitorStopped(int user_id, int chat_id, const QString& src, const QString& host, const QString& message);
+    void onSrcMonitorStopped(int user_id, int chat_id, const QString& src, const QString& command, const QString& host, const QString& message);
 
-    void onSrcMonitorStarted(int user_id, int chat_id, const QString& src, const QString &host, const QString &formula);
+    void onSrcMonitorStarted(int user_id, int chat_id, const QString& src, const QString &formula, const QString &host);
 
     void onSrcMonitorStartError(int chat_id, const QString& src, const QString& message);
 
     void onSrcMonitorFormulaChanged(int user_id, int chat_id, const QString &new_s,
                                     const QString &host, const QString &old, const QString &new_f);
 
-    void onSrcMonitorTypeChanged(int user_id, int chat_id, const QString& src,
-                                 const QString& host, const QString& old_type, const QString& new_type);
-
-
-    // CuBotModule interface
 public:
-    void setBotmoduleListener(CuBotModuleListener *l);
     void setOption(const QString& key, const QVariant& value);
     int type() const;
     QString name() const;
@@ -109,17 +107,12 @@ public:
     QString help() const;
     AccessMode needsDb() const;
     AccessMode needsStats() const ;
-    void setDb(BotDb *db);
-    void setStats(BotStats *stats) ;
-    void setConf(BotConfig *conf);
     int decode(const TBotMsg &msg);
     bool process();
-    bool isVolatileOperation() const;
 
 private:
 
     bool m_isBigSizeVector(const CuData &da) const;
-    QString m_getHost(int chat_id, const QString& src = QString());
 
     // database
 };

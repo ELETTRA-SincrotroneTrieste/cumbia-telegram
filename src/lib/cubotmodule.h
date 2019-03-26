@@ -21,6 +21,8 @@ public:
                                       bool silent = false,
                                       bool wait_for_reply = false) = 0;
 
+    virtual void onSendPictureRequest(int chat_id, const QByteArray &pic_ba) = 0;
+
     virtual void onReplaceVolatileOperationRequest(int chat_id, CuBotVolatileOperation *vo) = 0;
     virtual void onAddVolatileOperationRequest(int chat_id, CuBotVolatileOperation *vo) = 0;
 
@@ -58,9 +60,6 @@ public:
     virtual QString description() const = 0;
 
     virtual QString help() const = 0;
-
-    virtual bool isVolatileOperation() const = 0;
-
 
     CuBotModuleListener *getModuleListener() const;
 
@@ -110,7 +109,7 @@ public:
      */
     virtual QString message() const = 0;
 
-    bool isPlugin() const;
+    virtual bool isPlugin() const;
 
 private:
     CuBotModulePrivate *d;

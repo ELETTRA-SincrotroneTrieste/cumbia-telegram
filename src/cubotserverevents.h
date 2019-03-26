@@ -4,11 +4,17 @@
 #include <QEvent>
 #include <QString>
 
+#include <cudata.h>
+#include "lib/tbotmsg.h"
+
 class CuBotModule;
+class CuBotVolatileOperation;
 
 class EventTypes {
 public:
-    enum ETypes { ServerProcess = QEvent::User + 10, SendMsgRequest, AddVolatileOp, ReplaceVolatileOp };
+    enum ETypes { /* ServerProcess = QEvent::User + 10, */ SendMsgRequest = QEvent::User + 12, SendPicRequest,
+                  ReinjectMsgRequest, AddVolatileOp, ReplaceVolatileOp,
+                    AddStatsRequest };
 
     static QEvent::Type type(ETypes t) {
         return static_cast<QEvent::Type>(t);
@@ -18,21 +24,79 @@ public:
 class CuBotServerSendMsgEvent : public QEvent {
 public:
     CuBotServerSendMsgEvent(int cha_id, const QString& mess, bool _silent, bool _wait_for_reply);
-
-    ~CuBotServerSendMsgEvent();
-
     bool wait_for_reply, silent;
     QString msg;
     int chat_id;
 };
 
+class CuBotServerSendPicEvent : public QEvent {
+public:
+    CuBotServerSendPicEvent(int cha_id, const QByteArray &img);
+
+    QByteArray img_ba;
+    int chat_id;
+};
+
+// this has been removed because posting events to invoke process
+// requires each module to implement a queue of decoded data
+// not to discard events when multiple subsequent
+// messages are delivered to the module
+//
+// This was the code in cubotserver.cpp CuBotServer::event method
+ /* if(e->type() == EventTypes::ServerProcess) {
+
+   CuBotServerProcessEvent *spe = static_cast<CuBotServerProcessEvent *>(e);
+   CuBotModule *module = spe->module;
+   int t = module->type();
+   bool success = module->process();
+   if(!success) {
+       perr("CuBotServer: module \"%s\" failed to process: %s", qstoc(module->name()),
+            qstoc(module->message()));
+   }
+   d->volatile_ops->consume(spe->chat_id, t);
+   spe->accept();
+   return true;
+}
+else */
+//
+// this is the class declaration
+//
+/*
 class CuBotServerProcessEvent : public QEvent
 {
 public:
     CuBotServerProcessEvent(CuBotModule *mod, int chat_i);
-    ~CuBotServerProcessEvent();
     int chat_id;
     CuBotModule *module;
+};
+*/
+
+class CuBotServerReinjectMsgEvent : public QEvent {
+public:
+    CuBotServerReinjectMsgEvent(const TBotMsg& msg);
+
+    TBotMsg tbotmsg;
+};
+
+class CuBotServerReplaceVolatileOpEvent : public QEvent {
+public:
+    CuBotServerReplaceVolatileOpEvent(int chat_id, CuBotVolatileOperation *vop);
+    int chat_id;
+    CuBotVolatileOperation *vop;
+};
+
+class CuBotServerAddVolatileOpEvent : public QEvent {
+public:
+    CuBotServerAddVolatileOpEvent(int ch_id, CuBotVolatileOperation *vo);
+    int chat_id;
+    CuBotVolatileOperation *vop;
+};
+
+class CuBotServerAddStatsEvent : public QEvent {
+public:
+    CuBotServerAddStatsEvent(int ch_id, const CuData& da);
+    int chat_id;
+    CuData data;
 };
 
 #endif // CUBOTSERVEREVENTS_H

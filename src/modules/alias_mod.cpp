@@ -131,7 +131,7 @@ QString AliasModule::name() const
 
 QString AliasModule::description() const
 {
-    return "A cumbia-telegram module dealing with alias";
+    return "Alias anything with this module";
 }
 
 QString AliasModule::help() const

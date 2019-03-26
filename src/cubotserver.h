@@ -2,13 +2,13 @@
 #define CUBOTSERVER_H
 
 #include <QObject>
-#include <tbotmsg.h>
+#include "lib/tbotmsg.h"
 #include <tbotmsgdecoder.h>
-#include <botdb.h>
-#include <botreader.h> // for BotReader::RefreshMode
-#include "cubotmodule.h"
+#include "lib/botdb.h"
+#include "lib/botreader.h" // for BotReader::RefreshMode
+#include "lib/cubotmodule.h"
 
-#include "../cumbia-telegram-defs.h" // for ControlMsg::Type
+#include "lib/cumbia-telegram-defs.h" // for ControlMsg::Type
 
 class CuBotServerPrivate;
 class QJsonValue;
@@ -41,9 +41,6 @@ private slots:
     // control server data
     void onNewControlServerData(int uid, int chat_id, ControlMsg::Type t, const QString& msg, QLocalSocket *so);
 
-    void m_onReaderRefreshModeChanged(int user_id, int chat_id, const QString& src, const QString& host, BotReader::RefreshMode rm);
-
-
 public slots:
     void start();
     void stop();
@@ -58,6 +55,8 @@ private:
 
     void m_loadPlugins();
 
+    void m_unloadAll();
+
     void m_setupMonitor();
 
     bool m_saveProcs();
@@ -66,10 +65,11 @@ private:
 
     bool m_broadcastShutdown();
 
-    QList<HistoryEntry> m_prepareHistory(int uid, TBotMsgDecoder::Type t);
     void m_removeExpiredProcs(QList<HistoryEntry> &in);
 
     bool m_isBigSizeVector(const CuData &da) const;
+
+    bool m_registerModule(CuBotModule *mod);
 
 
     // CuBotModuleListener interface
@@ -78,6 +78,7 @@ public:
     void onReplaceVolatileOperationRequest(int chat_id, CuBotVolatileOperation *vo);
     void onAddVolatileOperationRequest(int chat_id, CuBotVolatileOperation *vo);
     void onStatsUpdateRequest(int chat_id, const CuData& data);
+    void onSendPictureRequest(int chat_id, const QByteArray &pic_ba);
 
     // CuBotModuleListener interface
 public:

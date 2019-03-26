@@ -14,7 +14,7 @@
 #include <QJsonObject>
 #include <QTimer>
 
-#include "tbotmsg.h"
+#include "lib/tbotmsg.h"
 
 class CuBotListenerPrivate {
 public:

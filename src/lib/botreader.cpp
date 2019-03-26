@@ -320,7 +320,7 @@ void BotReader::setPriority(BotReader::Priority pri)
     if(pri != d->priority) {
         Priority oldpri = d->priority;
         d->priority = pri;
-        emit priorityChanged(d->chat_id, source(), oldpri, d->priority);
+        emit priorityChanged(d->user_id, d->chat_id, source(), oldpri, d->priority, d->host);
     }
 }
 
@@ -395,13 +395,11 @@ void BotReader::m_configure(const CuData& da)
  */
 void BotReader::onUpdate(const CuData &da)
 {
-//    printf("\e[1;33mBotReader.onUpdate: data %s\e[0m\n", da.toString().c_str());
     d->read_ok = !da["err"].toBool();
     if(d->read_ok && d->refresh_cnt == 0) {
         m_check_or_setStartedNow(); // read method comments
-        emit startSuccess(d->user_id, d->chat_id, source(), d->command);
+        emit startSuccess(d->user_id, d->chat_id, source(), d->command, d->host);
     }
-
     // configure object if the type of received data is "property"
     if(d->read_ok && d->auto_configure && da["type"].toString() == "property") {
         m_configure(da);
@@ -439,7 +437,8 @@ bool BotReader::m_publishResult(const CuData &da)
     data["silent"] = (d->priority == Low);
     data["index"] = d->index;
     data["print_format"] = d->print_format.toStdString();
-    data["display_unit"] = d->unit.toStdString();
+    da.containsKey("display_unit") ? data["display_unit"] = da["display_unit"].toString() :
+        data["display_unit"] = d->unit.toStdString();
     data["command"] = d->command.toStdString();
     data["msg"] = FormulaHelper().escape(QString::fromStdString(da["msg"].toString())).toStdString();
     CuDataQuality read_quality(da["quality"].toInt());
@@ -453,10 +452,6 @@ bool BotReader::m_publishResult(const CuData &da)
     quality_invalid_change = (read_quality.toInt() & CuDataQuality::Invalid )
             != (d->old_quality.toInt() & CuDataQuality::Invalid);
     quality_change = read_quality != d->old_quality;
-
-//    printf("\e[1;33mBotReader \"%s\" value changed %d cuz old value %s new %s old q %d new q %d\e[0m\n",
-//           da["src"].toString().c_str(), value_change, v.toString().c_str(), d->old_value.toString().c_str(),
-//           d->old_quality.toInt(), read_quality.toInt());
 
     if(!d->formula_is_identity) { // dealing with formula
         // data contains the result of a formula true / false or the result of a formula as some value

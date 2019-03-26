@@ -5,8 +5,9 @@
 #include <QtSql>
 #include <QMap>
 
-#include "historyentry.h"
-#include "botconfig.h"
+#include <historyentry.h>
+#include <botconfig.h>
+#include <hostentry.h>
 
 class BotDb
 {
@@ -21,7 +22,7 @@ public:
 
     bool removeUser(int uid);
 
-    bool addToHistory(const HistoryEntry &in);
+    int addToHistory(const HistoryEntry &in);
 
     bool saveProc(const HistoryEntry &he);
 
@@ -39,13 +40,15 @@ public:
 
     QList<HistoryEntry> history(int uid, const QString &type);
 
+    int fixStaleItems(const QStringList& cmd_list);
+
     QMap<int, QString> usersById();
 
 //    QList<HistoryEntry> bookmarks(int uid);
 
     HistoryEntry commandFromIndex(int uid, const QString &type, int index);
 
-    bool monitorStopped(int chat_id, const QString& src);
+    bool monitorStopped(int user_id, const QString& command, const QString& host);
 
     bool error() const;
 
@@ -57,6 +60,9 @@ public:
 
     bool userExists(int uid);
 
+    QList<HostEntry> getHostList();
+
+    bool setHost(int user_id, int chat_id, int host_idx, QString& new_host, QString &new_host_description);
     bool setHost(int user_id, int chat_id, const QString &host, QString& new_host_description);
 
     QString getSelectedHost(int chat_id);
@@ -72,7 +78,6 @@ public:
     QList<int> getChatsWithActiveMonitors();
 
     const QSqlDatabase *getSqlDatabase() const;
-
 
 private:
     QSqlDatabase m_db;
