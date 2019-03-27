@@ -105,20 +105,11 @@ bool CuBotServer::event(QEvent *e)
         CuBotServerSendMsgEvent *sendMsgE = static_cast<CuBotServerSendMsgEvent *>(e);
         d->bot_sender->sendMessage(sendMsgE->chat_id, sendMsgE->msg, sendMsgE->silent, sendMsgE->wait_for_reply);
         sendMsgE->accept();
-
     }
     else if(e->type() == EventTypes::type(EventTypes::SendPicRequest)) {
         CuBotServerSendPicEvent *sendPicE = static_cast<CuBotServerSendPicEvent *>(e);
         d->bot_sender->sendPic(sendPicE->chat_id, sendPicE->img_ba);
         sendPicE->accept();
-    }
-    else if(e->type() == EventTypes::type(EventTypes::ReplaceVolatileOp)) {
-        CuBotServerReplaceVolatileOpEvent *roe = static_cast<CuBotServerReplaceVolatileOpEvent *>(e);
-        d->volatile_ops->replaceOperation(roe->chat_id, roe->vop);
-    }
-    else if(e->type() == EventTypes::type(EventTypes::AddVolatileOp)) {
-        CuBotServerAddVolatileOpEvent *roe = static_cast<CuBotServerAddVolatileOpEvent *>(e);
-        d->volatile_ops->addOperation(roe->chat_id, roe->vop);
     }
     else if(e->type() == EventTypes::type(EventTypes::AddStatsRequest)) {
         CuBotServerAddStatsEvent *ase = static_cast<CuBotServerAddStatsEvent *>(e);
@@ -148,76 +139,19 @@ void CuBotServer::onMessageReceived(const TBotMsg &m)
         CuBotModule *module = d->modules_map[type];
         int t = module->decode(m);
         if(t > 0) {
-            printf("CuBotServer::onMessageReceived: module %s [%d] decoded the message\n", qstoc(module->name()), t);
-            module->process();
+           /* if(!d->auth->isAuthorized(m.user_id, module->name())) {
+                d->bot_sender->sendMessage(m.chat_id, m_unauthorized_msg(m.username, module->name(),
+                                                                                  d->auth->reason()));
+                fprintf(stderr, "\e[1;31;4mUNAUTH\e[0m: \e[1m%s\e[0m [uid %d] not authorized to exec \e[1;35m%s\e[0m: \e[3m\"%s\"\e[0m\n",
+                        qstoc(m.username), m.user_id, qstoc(module->name()), qstoc(d->auth->reason()));
+            }
+            else*/ {
+                printf("CuBotServer::onMessageReceived: module %s [%d] decoded the message\n", qstoc(module->name()), t);
+                module->process();
+            }
             break;
         }
     }
-    printf("   CuBotServer::onMessageReceived: waiting for new message...\n");
-
-    /*
-    TBotMsgDecoder msg_dec(m, normalizedFormulaPattern);
-    //    printf("type of message is %s [%d]\n", msg_dec.types[msg_dec.type()], msg_dec.type());
-    TBotMsgDecoder::Type t = msg_dec.type();
-    if(!d->auth->isAuthorized(m.user_id, t)) {
-        d->bot_sender->sendMessage(m.chat_id, MsgFormatter().unauthorized(m.username, msg_dec.types[t],
-                                                                          d->auth->reason()));
-        fprintf(stderr, "\e[1;31;4mUNAUTH\e[0m: \e[1m%s\e[0m [uid %d] not authorized to exec \e[1;35m%s\e[0m: \e[3m\"%s\"\e[0m\n",
-                qstoc(m.username), m.user_id, msg_dec.types[t], qstoc(d->auth->reason()));
-    }
-    else {
-        //  user is authorized to perform operation type t
-        //
-        if(t == TBotMsgDecoder::Host) {
-           // module
-        else if(t == TBotMsgDecoder::QueryHost) {// MODULE
-        }
-        else if(t == TBotMsgDecoder::Last) {
-            // moved to plugin
-        }
-        else if(t == TBotMsgDecoder::Read) { // moved to MODULE
-        }
-        else if(t == TBotMsgDecoder::ReadHistory || t == TBotMsgDecoder::MonitorHistory ||
-                t == TBotMsgDecoder::AlertHistory || t == TBotMsgDecoder::Bookmarks) {
-                // plugin
-        }
-        else if(t == TBotMsgDecoder::AddBookmark) {
-            // moved to plugins
-        }
-        else if(t == TBotMsgDecoder::DelBookmark) {
-           // moved to plugins
-        }
-        else if(t == TBotMsgDecoder::Search) { // moved to plugin }
-        else if(t == TBotMsgDecoder::AttSearch) {  // moved to plugin  }
-        else if(t == TBotMsgDecoder::ReadFromAttList) {  // moved to plugin }
-        else if(t == TBotMsgDecoder::CmdLink) {  // moved to plugin  }
-        else if(t >= TBotMsgDecoder::Help && t <= TBotMsgDecoder::HelpSearch) {
-            // module
-        }
-        else if(t == TBotMsgDecoder::Start) {
-            d->bot_sender->sendMessage(m.chat_id, MsgFormatter().help(TBotMsgDecoder::Help));
-        }
-        else if(t == TBotMsgDecoder::Plot) {
-            printf("PLOT\n");
-            // integrated into reader_mod
-        }
-        else if(t == TBotMsgDecoder::SetAlias) {
-            // MOVED TO AliasProc
-        }
-        else if(t == TBotMsgDecoder::ShowAlias) {
-            // moved to AliasProc
-        }
-        else if(t == TBotMsgDecoder::ShowAlias) {
-            // moved to AliasProc
-        }
-        else if(t == TBotMsgDecoder::Invalid || t == TBotMsgDecoder::Error) {
-            d->bot_sender->sendMessage(m.chat_id, MsgFormatter().error("TBotMsgDecoder", msg_dec.message()));
-        }
-
-        d->volatile_ops->consume(m.chat_id, msg_dec.type());
-    } // else user is authorized
-
-    */
 }
 
 void CuBotServer::onReaderUpdate(int chat_id, const CuData &data)
@@ -410,11 +344,6 @@ void CuBotServer::m_unloadAll()
     d->modules_map.clear();
 }
 
-void CuBotServer::onVolatileOperationExpired(int chat_id, const QString &opnam, const QString &text)
-{
-    d->bot_sender->sendMessage(chat_id, GenMsgFormatter().volatileOpExpired(opnam, text));
-}
-
 void CuBotServer::onNewControlServerData(int uid, int chat_id, ControlMsg::Type t, const QString &msg, QLocalSocket *so)
 {
     qDebug() << __PRETTY_FUNCTION__ << uid << chat_id << t << msg;
@@ -438,7 +367,7 @@ bool CuBotServer::m_saveProcs()
         foreach(BotReader *r, d->bot_mon->readers()) {
             HistoryEntry he(r->userId(), r->command(),
                             r->priority() == BotReader::High ? "alert" :  "monitor",
-                            r->host());
+                            r->getAppliedHost(), QString()); // QString(): empty description
             he.chat_id = r->chatId(); // chat_id is needed to restore process at restart
             he.datetime = r->startedOn();
             d->bot_db->saveProc(he);
@@ -509,16 +438,6 @@ void CuBotServer::onSendMessageRequest(int chat_id, const QString &msg, bool sil
     qApp->postEvent(this, sendMsgEvent);
 }
 
-void CuBotServer::onReplaceVolatileOperationRequest(int chat_id, CuBotVolatileOperation *vo)
-{
-    qApp->postEvent(this, new CuBotServerReplaceVolatileOpEvent(chat_id, vo));
-}
-
-void CuBotServer::onAddVolatileOperationRequest(int chat_id, CuBotVolatileOperation *vo)
-{
-    qApp->postEvent(this, new CuBotServerReplaceVolatileOpEvent(chat_id, vo));
-}
-
 void CuBotServer::onStatsUpdateRequest(int chat_id, const CuData &data)
 {
     qApp->postEvent(this, new CuBotServerAddStatsEvent(chat_id, data));
@@ -533,4 +452,12 @@ void CuBotServer::onSendPictureRequest(int chat_id, const QByteArray &pic_ba)
 void CuBotServer::onReinjectMessage(const TBotMsg &msg_mod)
 {
     qApp->postEvent(this, new CuBotServerReinjectMsgEvent(msg_mod));
+}
+
+QString CuBotServer::m_unauthorized_msg(const QString &username, const QString& op_type, const QString &reason) const
+{
+    QString s = QString("❌   user <i>%1</i> (%2) <b>unauthorized</b>:\n<i>%3</i>")
+            .arg(username).arg(op_type).arg(reason);
+
+    return s;
 }

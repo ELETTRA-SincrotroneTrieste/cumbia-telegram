@@ -27,12 +27,14 @@ public:
     bool err;
     CuBotVolatileOperations volatile_ops;
     CumbiaSupervisor cu_s;
+    CuFormulaParseHelper *formula_parser_helper;
 };
 
 BotReaderModule::BotReaderModule(QObject*parent, const CumbiaSupervisor &cu_s, CuBotModuleListener *lis, BotDb *db, BotConfig *conf) : QObject(parent)
 {
     d = new BotReaderModulePrivate;
     d->cu_s = cu_s;
+    d->formula_parser_helper = new CuFormulaParseHelper(cu_s.ctrl_factory_pool);
     setDb(db);
     setConf(conf);
     setBotmoduleListener(lis);
@@ -42,6 +44,7 @@ BotReaderModule::BotReaderModule(QObject*parent, const CumbiaSupervisor &cu_s, C
 BotReaderModule::~BotReaderModule()
 {
     pdelete("\e[1;31m~BotReaderModule %p\e[0m\n", this);
+    delete d->formula_parser_helper;
     delete d;
 }
 
@@ -58,15 +61,16 @@ void BotReaderModule::onReaderUpdate(int chat_id, const CuData &data)
     bool err = data["err"].toBool();
     DataMsgFormatter mf;
     CuBotModuleListener *mlis = getModuleListener();
-    mlis->onStatsUpdateRequest(chat_id, data); // data is passed for error stats
-    mlis->onSendMessageRequest(chat_id, mf.fromData_msg(data, DataMsgFormatter::FormatShort));
+    mlis->onStatsUpdateRequest(chat_id, data); // data is passed for error stats, QString() provides empty description
+    mlis->onSendMessageRequest(chat_id, mf.fromData_msg(data, DataMsgFormatter::FormatShort, QString()));
     if(!err && m_isBigSizeVector(data)) {
         BotPlotGenerator *plotgen = new BotPlotGenerator(chat_id, data);
         d->volatile_ops.replaceOperation(chat_id, plotgen);
     }
     if(!err) {
         BotReader *reader = qobject_cast<BotReader *>(sender());
-        HistoryEntry he(reader->userId(), reader->command(), "read", reader->host());
+        // last QString in HistoryEntry constructor is for description
+        HistoryEntry he(reader->userId(), reader->command(), "read", reader->getAppliedHost(), QString());
         getDb()->addToHistory(he);
     }
 }
@@ -150,10 +154,9 @@ bool BotReaderModule::m_tryDecodeFormula(const QString &text)
     // text does not start with either monitor or alarm
     d->source = QString();
 
-    CuFormulaParseHelper ph;
     QString norm_fpattern = d->cu_s.formulaPlugin()->getFormulaParserInstance()->normalizedFormulaPattern();
-    !ph.isNormalizedForm(text, norm_fpattern) ? d->source = ph.toNormalizedForm(text) : d->source = text;
-    d->detected_sources = ph.sources(d->source);
+    !d->formula_parser_helper->isNormalizedForm(text, norm_fpattern) ? d->source = d->formula_parser_helper->toNormalizedForm(text) : d->source = text;
+    d->detected_sources = d->formula_parser_helper->sources(d->source);
     return is_formula;
 }
 

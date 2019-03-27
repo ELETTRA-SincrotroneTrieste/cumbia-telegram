@@ -13,8 +13,7 @@ class CuBotVolatileOperation;
 class EventTypes {
 public:
     enum ETypes { /* ServerProcess = QEvent::User + 10, */ SendMsgRequest = QEvent::User + 12, SendPicRequest,
-                  ReinjectMsgRequest, AddVolatileOp, ReplaceVolatileOp,
-                    AddStatsRequest };
+                  ReinjectMsgRequest, AddStatsRequest };
 
     static QEvent::Type type(ETypes t) {
         return static_cast<QEvent::Type>(t);
@@ -76,20 +75,6 @@ public:
     CuBotServerReinjectMsgEvent(const TBotMsg& msg);
 
     TBotMsg tbotmsg;
-};
-
-class CuBotServerReplaceVolatileOpEvent : public QEvent {
-public:
-    CuBotServerReplaceVolatileOpEvent(int chat_id, CuBotVolatileOperation *vop);
-    int chat_id;
-    CuBotVolatileOperation *vop;
-};
-
-class CuBotServerAddVolatileOpEvent : public QEvent {
-public:
-    CuBotServerAddVolatileOpEvent(int ch_id, CuBotVolatileOperation *vo);
-    int chat_id;
-    CuBotVolatileOperation *vop;
 };
 
 class CuBotServerAddStatsEvent : public QEvent {

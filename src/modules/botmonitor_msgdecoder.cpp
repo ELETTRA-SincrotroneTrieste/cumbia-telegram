@@ -6,11 +6,18 @@
 #include <QtDebug>
 #include <QRegularExpression>
 #include <cutango-world.h>
+#include <cucontrolsfactorypool.h>
 
-BotMonitorMsgDecoder::BotMonitorMsgDecoder() {
+BotMonitorMsgDecoder::BotMonitorMsgDecoder(const CuControlsFactoryPool &fap) {
     m_type = Invalid;
     m_cmdLinkIdx = -1;
     m_chat_id = m_user_id = -1;
+    m_formula_parser_helper = new CuFormulaParseHelper(fap);
+}
+
+BotMonitorMsgDecoder::~BotMonitorMsgDecoder()
+{
+    delete m_formula_parser_helper;
 }
 
 void BotMonitorMsgDecoder::setNormalizedFormulaPattern(const QString &nfp) {
@@ -37,11 +44,19 @@ QString BotMonitorMsgDecoder::text() const {
     return m_text;
 }
 
+QString BotMonitorMsgDecoder::description() const
+{
+    return m_description;
+}
+
 BotMonitorMsgDecoder::Type BotMonitorMsgDecoder::decode(const TBotMsg &msg) {
     m_cmdLinkIdx = -1;
     m_type = Invalid;
     m_text = msg.text();
     m_host = msg.host();
+    // description: a comment after the command text, starting with `//' and extracted
+    // by TBotMsg
+    m_description = msg.description();
     m_text.replace(QRegularExpression("\\s+"), " ");
     m_chat_id = msg.chat_id;
     m_user_id = msg.user_id;
@@ -49,6 +64,7 @@ BotMonitorMsgDecoder::Type BotMonitorMsgDecoder::decode(const TBotMsg &msg) {
 
     QRegularExpression re;
     QRegularExpressionMatch match;
+
     printf("BotMonitorMsgDecoder: decoding \"%s\" ...\n", qstoc(m_text));
     re.setPattern("/(?:read|monitor|alert)(\\d{1,2})\\b");
     match = re.match(m_text);
@@ -100,8 +116,7 @@ bool BotMonitorMsgDecoder::m_tryDecodeFormula(const QString &text) {
     bool is_formula = true;
     // text does not start with either monitor or alarm
     m_source = QString();
-
-    CuFormulaParseHelper ph;
+    const CuFormulaParseHelper &ph = *m_formula_parser_helper;
     !ph.isNormalizedForm(text, m_normalizedFormulaPattern) ? m_source = ph.toNormalizedForm(text) : m_source = text;
     m_detectedSources = ph.sources(m_source);
     return is_formula;

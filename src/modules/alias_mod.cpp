@@ -337,11 +337,12 @@ HistoryEntry AliasModule::m_db_getFromHistory(int user_id, int index)
     if(!d->qsqld.isOpen())
         return he;
     d->msg.clear();
-    QSqlQuery q(d->qsqld);
-    bool err = !q.exec(QString("SELECT timestamp,command,type,host FROM history WHERE user_id=%1 AND h_idx=%2")
+    QSqlQuery q(d->qsqld); //             0         1     2     3        4
+    bool err = !q.exec(QString("SELECT timestamp,command,type,host,description FROM history WHERE user_id=%1 AND h_idx=%2")
                        .arg(user_id).arg(index));
     while(!err && q.next()) {
-        he = HistoryEntry (index, user_id, q.value(0).toDateTime(), q.value(1).toString(), q.value(2).toString(), q.value(3).toString());
+        he = HistoryEntry (index, user_id, q.value(0).toDateTime(), q.value(1).toString(),
+                           q.value(2).toString(), q.value(3).toString(), q.value(4).toString());
     }
     if(err) {
         d->msg = QString("AliasProc.m_db_getFromHistory: failed to exec %1: %2").arg(q.lastQuery()).arg(q.lastError().text());

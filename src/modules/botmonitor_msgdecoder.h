@@ -2,6 +2,8 @@
 #define BotMonitorMsgDecoder_H
 
 class TBotMsg;
+class CuFormulaParseHelper;
+class CuControlsFactoryPool;
 
 #include <QStringList>
 #include <QDateTime>
@@ -10,14 +12,15 @@ class BotMonitorMsgDecoder
 {
 public:
 
-
     enum Type { Invalid, Monitor, Alert, StopMonitor, CmdLink, MaxType = 16 };
 
     const char types[MaxType][48] = { "Invalid",  "Monitor", "Alert", "StopMonitor",
                                       "CmdLink",
                                       "MaxType" };
 
-    BotMonitorMsgDecoder();
+    BotMonitorMsgDecoder(const CuControlsFactoryPool &fap);
+
+    ~BotMonitorMsgDecoder();
 
     void setNormalizedFormulaPattern(const QString& nfp);
 
@@ -30,6 +33,8 @@ public:
     QString source() const;
 
     QString text() const;
+
+    QString description() const;
 
     Type decode(const TBotMsg &msg);
 
@@ -65,7 +70,7 @@ private:
 
     QString m_host;
     QString m_source;
-    QString m_text;
+    QString m_text, m_description;
 
     int m_cmdLinkIdx;
 
@@ -77,6 +82,7 @@ private:
 
     int m_chat_id, m_user_id;
     QDateTime m_startDt;
+    CuFormulaParseHelper *m_formula_parser_helper;
 };
 
 #endif // BotMonitorMsgDecoder_H

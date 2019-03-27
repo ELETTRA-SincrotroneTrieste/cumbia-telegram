@@ -33,6 +33,8 @@ public:
 
     BotReader* findReaderByUid(int user_id, const QString& src, const QString& host) const;
 
+    QString srcDescription() const;
+
     QList<BotReader *>  readers() const;
 
     void setMaxAveragePollingPeriod(int millis);
@@ -62,8 +64,9 @@ public slots:
     bool startRequest(int user_id, int chat_id, int uid_monitor_limit,
                       const QString& src,
                       const QString& cmd, BotReader::Priority priority,
-                      const QString& host = QString(),
-                      const QDateTime& startedOn = QDateTime());
+                      const QString& host,
+                      const QString &description,
+                      const QDateTime& startedOn);
 
 private:
     BotMonitorPrivate *d;

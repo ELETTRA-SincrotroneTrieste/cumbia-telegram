@@ -35,9 +35,6 @@ private slots:
 
     void onReaderUpdate(int chat_id, const CuData& d);
 
-    void onVolatileOperationExpired(int chat_id, const QString& opnam, const QString& text);
-
-
     // control server data
     void onNewControlServerData(int uid, int chat_id, ControlMsg::Type t, const QString& msg, QLocalSocket *so);
 
@@ -71,12 +68,11 @@ private:
 
     bool m_registerModule(CuBotModule *mod);
 
+    QString m_unauthorized_msg(const QString &username, const QString &op_type, const QString &reason) const;
 
     // CuBotModuleListener interface
 public:
     void onSendMessageRequest(int chat_id, const QString &msg, bool silent, bool wait_for_reply);
-    void onReplaceVolatileOperationRequest(int chat_id, CuBotVolatileOperation *vo);
-    void onAddVolatileOperationRequest(int chat_id, CuBotVolatileOperation *vo);
     void onStatsUpdateRequest(int chat_id, const CuData& data);
     void onSendPictureRequest(int chat_id, const QByteArray &pic_ba);
 

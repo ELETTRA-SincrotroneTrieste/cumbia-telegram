@@ -33,20 +33,6 @@ CuBotServerReinjectMsgEvent::CuBotServerReinjectMsgEvent(const TBotMsg &msg)
     tbotmsg = msg;
 }
 
-CuBotServerReplaceVolatileOpEvent::CuBotServerReplaceVolatileOpEvent(int ch_id, CuBotVolatileOperation *vo) :
-    QEvent(EventTypes::type(EventTypes::ReplaceVolatileOp))
-{
-    vop = vo;
-    chat_id = ch_id;
-}
-
-CuBotServerAddVolatileOpEvent::CuBotServerAddVolatileOpEvent(int ch_id, CuBotVolatileOperation *vo)
- : QEvent(EventTypes::type(EventTypes::AddVolatileOp))
-{
-    vop = vo;
-    chat_id = ch_id;
-}
-
 CuBotServerAddStatsEvent::CuBotServerAddStatsEvent(int ch_id, const CuData &da)
     : QEvent(EventTypes::type(EventTypes::AddStatsRequest))
 {

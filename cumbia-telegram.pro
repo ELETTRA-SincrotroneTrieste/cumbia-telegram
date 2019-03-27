@@ -58,7 +58,7 @@ SOURCES += \
     src/botcontrolserver.cpp \
     src/botstats.cpp \
     src/modules/monitorhelper.cpp \
-    src/tbotmsgdecoder.cpp \
+   # src/tbotmsgdecoder.cpp \
     src/modules/botmonitor_msgdecoder.cpp \
     src/modules/alias_mod.cpp \
     src/cubotserverevents.cpp \
@@ -72,7 +72,7 @@ SOURCES += \
 HEADERS += \
     src/cubotserver.h \
     src/cubotlistener.h \
-    src/tbotmsgdecoder.h \ 
+ #   src/tbotmsgdecoder.h \
     src/cubotsender.h \
     src/auth.h \
     src/botcontrolserver.h \

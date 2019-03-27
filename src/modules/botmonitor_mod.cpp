@@ -35,13 +35,17 @@ public:
     CumbiaPool *cu_pool;
     CuControlsFactoryPool ctrl_factory_pool;
     int ttl, poll_period, max_avg_poll_period;
-    BotMonitorMsgDecoder mon_msg_decoder;
+    BotMonitorMsgDecoder *mon_msg_decoder;
     QMap<QString, QVariant> options;
+    CuFormulaParseHelper *formula_parser_helper;
+    QString src_description;
 };
 
 BotMonitor::~BotMonitor()
 {
     printf("\e[1;31m~BotMonitor %p deleting %d readers\e[0m\n", this, readers().size());
+    delete d->formula_parser_helper;
+    delete d->mon_msg_decoder;
     foreach(BotReader *r, readers())
         delete r;
 }
@@ -54,11 +58,13 @@ BotMonitor::BotMonitor(QObject *parent, const CumbiaSupervisor &cu_s,
     d->err = false;
     d->ctrl_factory_pool = cu_s.ctrl_factory_pool;
     d->cu_pool = cu_s.cu_pool;
-    d->mon_msg_decoder.setNormalizedFormulaPattern(cu_s.formulaPlugin()->getFormulaParserInstance()->normalizedFormulaPattern());
+    d->mon_msg_decoder = new BotMonitorMsgDecoder(d->ctrl_factory_pool);
+    d->mon_msg_decoder->setNormalizedFormulaPattern(cu_s.formulaPlugin()->getFormulaParserInstance()->normalizedFormulaPattern());
 
     d->ttl = time_to_live;
     d->poll_period = poll_period;
     d->max_avg_poll_period = 1000;
+    d->formula_parser_helper = new CuFormulaParseHelper(d->ctrl_factory_pool);
 
     connect(this, SIGNAL(newMonitorData(int, const CuData&)),
             this, SLOT(onNewMonitorData(int, const CuData&)));
@@ -82,8 +88,7 @@ QString BotMonitor::message() const
 
 BotReader *BotMonitor::findReader(int chat_id, const QString &expression, const QString &host) const
 {
-    CuFormulaParseHelper ph;
-    QSet<QString> srcs = ph.sources(expression).toSet(); // extract sources from expression
+    QSet<QString> srcs = d->formula_parser_helper->sources(expression).toSet(); // extract sources from expression
     for(QMap<int, BotReader *>::iterator it = d->readersMap.begin(); it != d->readersMap.end(); ++it) {
         qDebug() << __PRETTY_FUNCTION__ << "find srcs" << srcs << "reader srcs" << it.value()->sources() <<
                     "find host" << host << " reader host " << it.value()->host() <<
@@ -99,9 +104,8 @@ BotReader *BotMonitor::findReader(int chat_id, const QString &expression, const 
 
 BotReader *BotMonitor::findReaderByUid(int user_id, const QString &expression, const QString& host) const
 {
-    CuFormulaParseHelper ph;
-    QString expr = ph.toNormalizedForm(expression);
-    QSet<QString> srcs = ph.sources(expr).toSet(); // extract sources from expression
+    QString expr = d->formula_parser_helper->toNormalizedForm(expression);
+    QSet<QString> srcs = d->formula_parser_helper->sources(expr).toSet(); // extract sources from expression
     for(QMap<int, BotReader *>::iterator it = d->readersMap.begin(); it != d->readersMap.end(); ++it) {
         if(it.key() == user_id && it.value()->sameSourcesAs(srcs) && it.value()->host() == host
                 && expression == it.value()->source()) {
@@ -109,6 +113,11 @@ BotReader *BotMonitor::findReaderByUid(int user_id, const QString &expression, c
         }
     }
     return nullptr;
+}
+
+QString BotMonitor::srcDescription() const
+{
+    return d->src_description;
 }
 
 QList<BotReader *> BotMonitor::readers() const
@@ -189,12 +198,14 @@ bool BotMonitor::startRequest(int user_id,
                               const QString& cmd,
                               BotReader::Priority priority,
                               const QString &host,
+                              const QString& description,
                               const QDateTime& started_on)
 {
     qDebug() << __PRETTY_FUNCTION__ << "startRequest with host " << host << "SOURCE " << src;
     d->err = false;
     BotReader *reader = findReader(chat_id, src, host);
     d->err = (reader && src == reader->source() && priority == reader->priority() );
+    d->src_description = description;
     if(d->err){
         d->msg = "BotMonitor.startRequest: chat_id " + QString::number(chat_id) + " is already monitoring \"" + cmd;
         !reader->command().isEmpty() ? (d->msg += " " + reader->command() + "\"") : (d->msg += "\"");
@@ -202,7 +213,7 @@ bool BotMonitor::startRequest(int user_id,
         m_onAlreadyMonitoring(chat_id, reader->command(), host);
     }
     else if( reader && src == reader->source() ) { // same source but priority changed
-        int history_idx = m_onPriorityChanged(user_id, chat_id, reader->command(),cmd,  priority,  host);
+        int history_idx = m_onPriorityChanged(user_id, chat_id, reader->command(),cmd,  priority,  reader->getAppliedHost());
         reader->setIndex(history_idx);
         reader->setPriority(priority);
         reader->setCommand(cmd);
@@ -212,7 +223,7 @@ bool BotMonitor::startRequest(int user_id,
         reader->unsetSource();
         reader->setCommand(cmd);
         reader->setSource(src);
-        m_onFormulaChanged(user_id, chat_id, reader->sources().join(","), oldcmd, reader->command(), host);
+        m_onFormulaChanged(user_id, chat_id, reader->sources().join(","), oldcmd, reader->command(), reader->getAppliedHost());
     }
     else {
         int uid_readers_cnt = d->readersMap.values(chat_id).size();
@@ -273,7 +284,7 @@ int BotMonitor::m_onPriorityChanged(int user_id,
     qDebug() << __PRETTY_FUNCTION__ << "old type " << oldcmd << "new " << newcmd;
     getModuleListener()->onSendMessageRequest(chat_id, BotmonitorMsgFormatter().monitorTypeChanged(oldcmd, newcmd));
     getDb()->monitorStopped(user_id, oldcmd, host);
-    HistoryEntry he(user_id, newcmd,  newpri == BotReader::Low ?  "monitor" : "alert", host);
+    HistoryEntry he(user_id, newcmd,  newpri == BotReader::Low ?  "monitor" : "alert", host, d->src_description);
     return getDb()->addToHistory(he);
 }
 
@@ -312,10 +323,7 @@ void BotMonitor::onNewMonitorData(int chat_id, const CuData &da)
 {
     DataMsgFormatter mf;
     CuBotModuleListener *lis = getModuleListener();
-    lis->onSendMessageRequest(chat_id, mf.fromData_msg(da, DataMsgFormatter::FormatShort), da["silent"].toBool());
-    if(m_isBigSizeVector(da)) {
-        lis->onReplaceVolatileOperationRequest(chat_id, new BotPlotGenerator(chat_id, da));
-    }
+    lis->onSendMessageRequest(chat_id, mf.fromData_msg(da, DataMsgFormatter::FormatShort, d->src_description), da["silent"].toBool());
     lis->onStatsUpdateRequest(chat_id, da);
 }
 
@@ -352,7 +360,7 @@ void BotMonitor::onSrcMonitorStarted(int user_id, int chat_id, const QString &sr
     getModuleListener()->onSendMessageRequest(chat_id, monf.monitorUntil(r->command(), until));
     // record new monitor into the database
     qDebug() << __PRETTY_FUNCTION__ << "adding history entry with formula " << formula << "host " << r->host() << "priority " << pri;
-    HistoryEntry he(user_id, r->command(), pri == BotReader::High ? "alert" :  "monitor", host);
+    HistoryEntry he(user_id, r->command(), pri == BotReader::High ? "alert" :  "monitor", host, d->src_description);
     int history_idx = getDb()->addToHistory(he); // returns the index of the history table
     // set the index of the reader according to the index in the database table
     // if database inserta failed (history_idx < 0) delete the reader
@@ -372,7 +380,7 @@ void BotMonitor::onSrcMonitorFormulaChanged(int user_id, int chat_id, const QStr
     // mark monitor with old formula stopped
     getDb()->monitorStopped(user_id, r->command(), r->host());
     printf("\e[1;33mADD TO HISTORY NEW ENTRY: %s\e[0m\n", qstoc(new_s));
-    HistoryEntry he(user_id, new_f, r->priority() == BotReader::Low ? "monitor" : "alert", r->host());
+    HistoryEntry he(user_id, new_f, r->priority() == BotReader::Low ? "monitor" : "alert", r->getAppliedHost(), d->src_description);
     r->setIndex(getDb()->addToHistory(he));
 }
 
@@ -412,7 +420,7 @@ CuBotModule::AccessMode BotMonitor::needsStats() const {
 
 int BotMonitor::decode(const TBotMsg &msg)
 {
-    BotMonitorMsgDecoder::Type t = d->mon_msg_decoder.decode(msg);
+    BotMonitorMsgDecoder::Type t = d->mon_msg_decoder->decode(msg);
     if(t != BotMonitorMsgDecoder::Invalid)
         return type();
     return -1;
@@ -421,31 +429,36 @@ int BotMonitor::decode(const TBotMsg &msg)
 bool BotMonitor::process()
 {
     bool success = false;
-    BotMonitorMsgDecoder::Type t = d->mon_msg_decoder.type();
-    int chat_id = d->mon_msg_decoder.chatId();
+    BotMonitorMsgDecoder::Type t = d->mon_msg_decoder->type();
+    int chat_id = d->mon_msg_decoder->chatId();
     CuBotModuleListener *lis = getModuleListener();
     if(t == BotMonitorMsgDecoder::Monitor || t == BotMonitorMsgDecoder::Alert) {
-        QString src = d->mon_msg_decoder.source();
+        QString src = d->mon_msg_decoder->source();
         QString host; // if m.hasHost use it, it comes from a fake history message created ad hoc by History
-        d->mon_msg_decoder.hasHost() ? host = d->mon_msg_decoder.host()
-                : host = ModuleUtils().getHost(d->mon_msg_decoder.chatId(), getDb(), d->ctrl_factory_pool); // may be empty. If so, TANGO_HOST will be used
+        d->mon_msg_decoder->hasHost() ? host = d->mon_msg_decoder->host()
+                : host = ModuleUtils().getHost(d->mon_msg_decoder->chatId(), getDb(), d->ctrl_factory_pool); // may be empty. If so, TANGO_HOST will be used
         // src = CuFormulaParseHelper().injectHost(host, src);
         // m.start_dt will be invalid if m is decoded by a real message
         // m.start_dt is forced to a given date and time when m is a fake msg built
         // from the database history
-        success = startRequest(d->mon_msg_decoder.userId(), chat_id,
-                               getBotConfig()->getDefaultAuth("monitors"), src, d->mon_msg_decoder.text(),
+        success = startRequest(d->mon_msg_decoder->userId(),
+                               chat_id,
+                               getBotConfig()->getDefaultAuth("monitors"),
+                               src,
+                               d->mon_msg_decoder->text(),
                                t == BotMonitorMsgDecoder::Monitor ? BotReader::Low : BotReader::High,
-                               host, d->mon_msg_decoder.startDateTime());
+                               host,
+                               d->mon_msg_decoder->description(),
+                               d->mon_msg_decoder->startDateTime());
         if(!success)
-            lis->onSendMessageRequest(d->mon_msg_decoder.chatId(),
+            lis->onSendMessageRequest(d->mon_msg_decoder->chatId(),
                                               GenMsgFormatter().error("CuBotServer", d->msg));
     }
-    else if(t == BotMonitorMsgDecoder::StopMonitor && d->mon_msg_decoder.cmdLinkIdx() < 0) {
-        QStringList srcs = CuFormulaParseHelper().sources(d->mon_msg_decoder.source());
+    else if(t == BotMonitorMsgDecoder::StopMonitor && d->mon_msg_decoder->cmdLinkIdx() < 0) {
+        QStringList srcs = d->formula_parser_helper->sources(d->mon_msg_decoder->source());
         printf("\e[1;32mBotMonitor::process: received StopMonitor cmd source is %s\e[0m\n", qstoc(srcs.join(", ")));
-        printf("\e[1;32mBotMonitor::process: received StopMonitor stop pattern is %s\e[0m\n", qstoc(d->mon_msg_decoder.getArgs().join(", ")));
-        success = stopAll(d->mon_msg_decoder.chatId(), srcs.isEmpty() ? d->mon_msg_decoder.getArgs() : srcs);
+        printf("\e[1;32mBotMonitor::process: received StopMonitor stop pattern is %s\e[0m\n", qstoc(d->mon_msg_decoder->getArgs().join(", ")));
+        success = stopAll(d->mon_msg_decoder->chatId(), srcs.isEmpty() ? d->mon_msg_decoder->getArgs() : srcs);
         if(!success) {
             lis->onSendMessageRequest(chat_id, GenMsgFormatter().error("CuBotServer", d->msg));
             // failure in this phase means reader is already stopped (not in monitor's map).
@@ -453,9 +466,9 @@ bool BotMonitor::process()
             // ..
         }
     }
-    else if(t == BotMonitorMsgDecoder::StopMonitor && d->mon_msg_decoder.cmdLinkIdx() > 0) {
+    else if(t == BotMonitorMsgDecoder::StopMonitor && d->mon_msg_decoder->cmdLinkIdx() > 0) {
         // stop by reader index!
-        success = stopByIdx(chat_id, d->mon_msg_decoder.cmdLinkIdx());
+        success = stopByIdx(chat_id, d->mon_msg_decoder->cmdLinkIdx());
         if(!success) {
             lis->onSendMessageRequest(chat_id, GenMsgFormatter().error("CuBotServer", d->msg));
         }
