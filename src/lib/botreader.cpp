@@ -44,6 +44,8 @@ public:
     CuDataQuality old_quality; // constructor sets internal quality to Valid
     CuVariant old_value;
     bool formula_is_identity;
+    CuFormulaParseHelper *fparser_helper;
+    bool needs_host;
 };
 
 /** \brief Constructor with the parent widget, *CumbiaPool*  and *CuControlsFactoryPool*
@@ -79,6 +81,8 @@ BotReader::BotReader(int user_id,
     }
     else
         d->host = host;
+    // create formula parser helper. Needs fpool to get src patterns
+    d->fparser_helper = new CuFormulaParseHelper(fpool);
 }
 
 void BotReader::m_init()
@@ -92,12 +96,14 @@ void BotReader::m_init()
     d->max = d->min = 0.0;
     d->old_quality = CuDataQuality(CuDataQuality::Undefined);
     d->formula_is_identity = false;
+    d->needs_host = true;
 }
 
 BotReader::~BotReader()
 {
     printf("\e[1;31m~BotReader %p\e[0m\n", this);
     delete d->context;
+    delete d->fparser_helper;
     delete d;
 }
 
@@ -120,8 +126,7 @@ void BotReader::setPropertiesOnly(bool props_only)
  */
 QStringList BotReader::sources() const
 {
-    CuFormulaParseHelper ph;
-    return ph.sources(d->source);
+    return d->fparser_helper->sources(d->source);
 }
 
 QString BotReader::source() const
@@ -156,7 +161,7 @@ bool BotReader::hasSource(const QString &src) const
  */
 bool BotReader::sourceMatch(const QString &pattern) const
 {
-    return CuFormulaParseHelper().sourceMatch(d->source, pattern);
+    return d->fparser_helper->sourceMatch(d->source, pattern);
 }
 
 bool BotReader::sameSourcesAs(const QSet<QString> &srcset) const
@@ -187,9 +192,50 @@ void BotReader::setCommand(const QString &cmd)
     d->command = cmd;
 }
 
+/**
+ * @brief BotReader::needsHost returns true if the engine of the source requires a host to connect to
+ *        for configuration (e.g. TANGO_HOST), false otherwise
+ * @return true: a host must be defined (e.g. TANGO_HOST) and it is used by the engine to read from the given source
+ * @return false: the engine does not require a host to read from the given source (EPICS)
+ *
+ * @see getAppliedHost
+ * @see host
+ */
+bool BotReader::needsHost() const
+{
+    return d->needs_host;
+}
+
+/**
+ * @brief BotReader::host returns the host associated to the reader
+ * @return the host name associated to the reader.
+ *
+ * \par Note
+ * The reader may not need a host to work properly, depending on the engine.
+ * To test whether a reader effectively makes use of a host, refer to
+ * \li needsHost
+ * and
+ * \li getAppliedHost
+ *
+ */
 QString BotReader::host() const
 {
     return d->host;
+}
+
+/**
+ * @brief BotReader::getAppliedHost returns the host used by the reader to connect to the given source (e.g. Tango host)
+ *        or an empty string if the engine does not need a host to connect to a source (e.g. epics)
+ * @return the host used by the reader (TANGO_HOST) or an empty string (if the reader relies on EPICS sources)
+ *
+ * @see needsHost
+ * @see host
+ */
+QString BotReader::getAppliedHost() const
+{
+    if(d->needs_host)
+        return d->host;
+    return QString();
 }
 
 QDateTime BotReader::startedOn() const
@@ -320,7 +366,7 @@ void BotReader::setPriority(BotReader::Priority pri)
     if(pri != d->priority) {
         Priority oldpri = d->priority;
         d->priority = pri;
-        emit priorityChanged(d->user_id, d->chat_id, source(), oldpri, d->priority, d->host);
+        emit priorityChanged(d->user_id, d->chat_id, source(), oldpri, d->priority, getAppliedHost());
     }
 }
 
@@ -344,15 +390,14 @@ void BotReader::setSource(const QString &s)
     if(!options.isEmpty())
         d->context->setOptions(options);
 
-    CuFormulaParseHelper ph;
-    QString src = ph.injectHost(d->host, s);
+    QString src = d->fparser_helper->injectHostIfNeeded(d->host, s, &d->needs_host);
     CuControlsReaderA * r = d->context->replace_reader(src.toStdString(), this);
     d->read_ok = (r != nullptr);
     if(r) {
         r->setSource(src);
         // no host in source()
         d->source = s;
-        d->formula_is_identity = ph.identityFunction(d->source);
+        d->formula_is_identity = d->fparser_helper->identityFunction(d->source);
     }
 }
 
@@ -370,7 +415,7 @@ void BotReader::setFormula(const QString &formula)
     if(formula != d->command) {
         const QString old_f = d->command;
         d->command = formula;
-        emit formulaChanged(d->user_id, d->chat_id, source(), old_f, formula, d->host);
+        emit formulaChanged(d->user_id, d->chat_id, source(), old_f, formula, getAppliedHost());
     }
 }
 
@@ -398,7 +443,7 @@ void BotReader::onUpdate(const CuData &da)
     d->read_ok = !da["err"].toBool();
     if(d->read_ok && d->refresh_cnt == 0) {
         m_check_or_setStartedNow(); // read method comments
-        emit startSuccess(d->user_id, d->chat_id, source(), d->command, d->host);
+        emit startSuccess(d->user_id, d->chat_id, source(), d->command, getAppliedHost());
     }
     // configure object if the type of received data is "property"
     if(d->read_ok && d->auto_configure && da["type"].toString() == "property") {

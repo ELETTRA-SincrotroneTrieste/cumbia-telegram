@@ -10,11 +10,13 @@ public:
                  const QDateTime& ts,
                  const QString& cmd,
                  const QString& ty,
-                 const QString& host);
+                 const QString& host,
+                 const QString& desc);
 
     HistoryEntry(int u_id, const QString &cmd,
         const QString& typ,
-        const QString& _host);
+        const QString& _host,
+        const QString& descr);
 
 
 
@@ -35,7 +37,7 @@ public:
 
     int index; // general purpose index, used by BotDb::m_createHistory(int user_id)
     int user_id, chat_id;
-    QString command, type, host;
+    QString command, type, host, description;
     QDateTime datetime, stop_datetime;
 
     bool is_active;

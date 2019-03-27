@@ -30,6 +30,10 @@ public:
 
     void setText(const QString& t);
 
+    QString description()const;
+
+    void setDescription(const QString& desc);
+
 
     QString chat_first_name;
     int chat_id;
@@ -55,6 +59,9 @@ public:
 private:
     QString m_host;
     QString m_text;
+    QString m_description;
+
+    QString m_stripDescription(QString &text);
 };
 
 #endif // MSGPRINT_H

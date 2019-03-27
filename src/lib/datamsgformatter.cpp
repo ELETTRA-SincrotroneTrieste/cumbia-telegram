@@ -7,7 +7,7 @@
 
 #define MAXVALUELEN 45
 
-QString DataMsgFormatter::fromData_msg(const CuData &d, FormatOption f)
+QString DataMsgFormatter::fromData_msg(const CuData &d, FormatOption f, const QString &description)
 {
     FormulaHelper fh;
     QString msg, eval_value, vector_info, src, value, quality_str;
@@ -32,9 +32,13 @@ QString DataMsgFormatter::fromData_msg(const CuData &d, FormatOption f)
         src = QString::fromStdString(d["src"].toString());
         cleanSource(src, point, device, host, f);
     }
+
+    if(!description.isEmpty()) {
+        msg += "<i>" + fh.escape(description) + "</i>\n";
+    }
     QString cmd = QString::fromStdString(d["command"].toString());
     if(!cmd.isEmpty())
-        msg += "<i>" + fh.escape(cmd) + "</i>:\n";
+        msg += "<i>" + fh.escape(cmd) + "</i>\n";
 
     if(!ok) {
         msg += "\n";

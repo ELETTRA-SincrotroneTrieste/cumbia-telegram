@@ -206,6 +206,7 @@ int BotDb::addToHistory(const HistoryEntry &in)
     const QString &cmd = in.command;
     const QString& type = in.type;
     const QString& host = in.host;
+    const QString& description = in.description;
     int history_len = 8; // pick from db!
     QList<int> h_idxs;
 
@@ -224,9 +225,19 @@ int BotDb::addToHistory(const HistoryEntry &in)
 
     if(update_timestamp_only) {
         h_index = q.value(1).toInt(); // PRIMARY KEY(user_id,type,h_idx)
-        m_err = !q.exec(QString("UPDATE history SET timestamp=datetime(), stop_timestamp=NULL "
+
+        // no description? leave description field as is
+        // a new description is provided? update description too
+        if(description.isEmpty()) {
+            m_err = !q.exec(QString("UPDATE history SET timestamp=datetime(), stop_timestamp=NULL "
                                 "where user_id=%1 AND type='%2' AND h_idx=%3;")
                         .arg(uid).arg(type).arg(h_index));
+        }
+        else {
+            m_err = !q.exec(QString("UPDATE history SET timestamp=datetime(), stop_timestamp=NULL, description='%4'"
+                                "where user_id=%1 AND type='%2' AND h_idx=%3;")
+                        .arg(uid).arg(type).arg(h_index).arg(description));
+        }
     }
 
     if(!m_err && !update_timestamp_only) {
@@ -275,8 +286,8 @@ int BotDb::addToHistory(const HistoryEntry &in)
             // calculate first per history index available
             h_index = m_findFirstAvailableIdx(h_idxs);
             // user_id INTEGER NOT NULL, timestamp DATETIME NOT NULL, command TEXT NOT NULL,type TEXT NOT NULL,host TEXT DEFAULT, stop_timestamp ''
-            m_err = !q.exec(QString("INSERT INTO history VALUES(%1, datetime(), '%2', '%3', '%4', %5, NULL)").
-                            arg(uid).arg(cmd).arg(type).arg(host).arg(h_index));
+            m_err = !q.exec(QString("INSERT INTO history VALUES(%1, datetime(), '%2', '%3', '%4', '%5', %6, NULL)").
+                            arg(uid).arg(cmd).arg(type).arg(host).arg(description).arg(h_index));
             if(m_err)
                 m_msg =  "BotDb.addToHistory: " + q.lastError().text();
 
@@ -299,13 +310,13 @@ QList<HistoryEntry> BotDb::history(int user_id, const QString& type) {
     QSqlQuery q(m_db);
     QString t = type;
     if(type != "bookmarks") {
-        m_err = !q.exec(QString("SELECT user_id,timestamp,command,type,host,h_idx,_rowid_,stop_timestamp"
+        m_err = !q.exec(QString("SELECT user_id,timestamp,command,type,host,description,h_idx,_rowid_,stop_timestamp"
                                 " FROM history WHERE user_id=%1 AND type='%2' "
                                 " ORDER BY timestamp ASC").arg(user_id).arg(t));
     }
     else { // query with no AND type='%s'
-        //                                 0                1        2     3    4    5            6
-        m_err = !q.exec(QString("SELECT user_id,history.timestamp,command,type,host,h_idx,history.rowid,stop_timestamp"
+        //                                 0                1        2     3    4    5            6     7      8       9
+        m_err = !q.exec(QString("SELECT user_id,history.timestamp,command,type,host,description,h_idx,history.rowid,stop_timestamp"
                                 " FROM history,bookmarks WHERE user_id=%1 "
                                 " AND bookmarks.history_rowid=history.rowid "
                                 " ORDER BY history.timestamp ASC").arg(user_id));
@@ -325,7 +336,8 @@ QList<HistoryEntry> BotDb::history(int user_id, const QString& type) {
                         r.value("timestamp").toDateTime(),
                         r.value("command").toString(),
                         r.value("type").toString(),
-                        r.value("host").toString());
+                        r.value("host").toString(),
+                        r.value("description").toString());
         he.stop_datetime = r.value("stop_timestamp").toDateTime();
         he.is_active = he.stop_datetime.isNull();
         hel << he;
@@ -809,6 +821,7 @@ void BotDb::createDb(const QString& tablename)
                             "command TEXT NOT NULL,"
                             "type TEXT NOT NULL,"
                             "host TEXT DEFAULT '',"
+                            "description TEXT DEFAULT '',"
                             "h_idx INTEGER NOT NULL,"
                             "stop_timestamp DATETIME DEFAULT NULL,"
                             "UNIQUE (user_id, command, type, host, h_idx) ON CONFLICT REPLACE,"

@@ -4,12 +4,30 @@
 #include <QtDebug>
 #include <cumacros.h>
 
-CuFormulaParseHelper::CuFormulaParseHelper()
+CuFormulaParseHelper::CuFormulaParseHelper(const CuControlsFactoryPool &fap)
 {
-    const char* tg_host_pattern_p = "(?:[A-Za-z0-9\\.\\-_]+:[\\d]+/){0,1}";
-    const char* tg_pattern_p = "[A-Za-z0-9\\.\\-_:]+";
-    QString tg_att_pattern = QString("%1%2/%2/%2/%2").arg(tg_host_pattern_p).arg(tg_pattern_p);
-    m_src_patterns << tg_att_pattern;
+    // Patterns are no more defined statically in this class but are rather obtained
+    // from the reference to CuControlsFactoryPool
+    //
+    // old pattern definitions (please compare them with the definitions in CumbiaSupervisor
+    // in case of problems.
+    //
+//    const char* tg_host_pattern_p = "(?:[A-Za-z0-9\\.\\-_]+:[\\d]+/){0,1}";
+//    const char* tg_pattern_p = "[A-Za-z0-9\\.\\-_:]+";
+//    const char* ep_pattern = "[A-Za-z0-9\\.\\-_]+:[A-Za-z0-9\\.\\-_]+";
+//    QString tg_att_pattern = QString("%1%2/%2/%2/%2").arg(tg_host_pattern_p).arg(tg_pattern_p);
+//    m_src_patterns.insertMulti("tango",  tg_att_pattern.toStdString());
+//    m_src_patterns.insertMulti("epics",  ep_pattern);
+
+    //
+    // source patterns for the available domains are obtained by CuControlsFactoryPool
+    //
+    m_fap = fap;
+    std::vector<std::string> domains = fap.getSrcPatternDomains();
+    foreach(std::string domain, domains) {
+        foreach(std::string patt, fap.getSrcPatterns(domain))
+            m_src_patterns.insertMulti(domain, patt);
+    }
 }
 
 bool CuFormulaParseHelper::isNormalizedForm(const QString &f, const QString& norm_pattern) const
@@ -18,7 +36,7 @@ bool CuFormulaParseHelper::isNormalizedForm(const QString &f, const QString& nor
     QString e(f);
     e.remove("formula://");
     QRegularExpressionMatch match = re.match(e);
-    printf("\e[1;35mIsNormalised form %d pattern is \"%s\" %s\e[0m\n", match.hasMatch() , qstoc(norm_pattern),
+    printf("\e[1;35mCuFormulaParseHelper::isNormalizedForm %d pattern is \"%s\" %s\e[0m\n", match.hasMatch() , qstoc(norm_pattern),
            qstoc(f));
     return match.hasMatch();
 }
@@ -39,10 +57,8 @@ QString CuFormulaParseHelper::toNormalizedForm(const QString &f) const
     }
 
     if(srcs.size() > 0) {
-
         QString function_decl;
         QString function_body(f);
-
         QString params;
         norm = "formula://{" + srcs.join(",") + "}";
         // now build function arguments
@@ -69,9 +85,11 @@ QString CuFormulaParseHelper::toNormalizedForm(const QString &f) const
     return norm;
 }
 
-QString CuFormulaParseHelper::injectHost(const QString &host, const QString &src)
+QString CuFormulaParseHelper::injectHostIfNeeded(const QString &host, const QString &src, bool *needs_host)
 {
     QString s(src);
+    *needs_host = false;
+
     if(!host.isEmpty()) {
         QString src_section;
         // (\{.+\}).+
@@ -87,7 +105,11 @@ QString CuFormulaParseHelper::injectHost(const QString &host, const QString &src
             QStringList srcs;
             while(i.hasNext()) {
                 QRegularExpressionMatch match = i.next();
-                QString src = host + "/" + match.captured(1);
+                QString src = match.captured(1);
+                if(needsHost(src)) {
+                    src = host + "/" + src;
+                    *needs_host = true;
+                }
                 if(!srcs.contains(src))
                     srcs << src;
             }
@@ -122,17 +144,15 @@ QStringList CuFormulaParseHelper::sources(const QString &srcformula) const
 
 QStringList CuFormulaParseHelper::srcPatterns() const
 {
-    return m_src_patterns;
+    QStringList p;
+    for(int i = 0; i < m_src_patterns.values().size(); i++)
+        p << QString::fromStdString(m_src_patterns.values()[i]);
+    return p;
 }
 
-void CuFormulaParseHelper::setSrcPatterns(const QStringList &srcp)
+void CuFormulaParseHelper::addSrcPattern(const QString& domain, const QString &p)
 {
-    m_src_patterns = srcp;
-}
-
-void CuFormulaParseHelper::addSrcPattern(const QString &p)
-{
-    m_src_patterns << p;
+    m_src_patterns.insertMulti(domain.toStdString(), p.toStdString());
 }
 
 /**
@@ -174,12 +194,28 @@ bool CuFormulaParseHelper::identityFunction(const QString& expression) const
     return match.hasMatch();
 }
 
+bool CuFormulaParseHelper::needsHost(const QString &src) const
+{
+    foreach(std::string key, m_src_patterns.keys()) {
+        foreach(std::string pat, m_src_patterns.values(key)) {
+            QRegularExpression re(pat.c_str());
+            QRegularExpressionMatch match = re.match(src);
+            if(match.hasMatch()) {
+                 if(key == "tango") return true;
+                 else if(key == "epics") return false;
+            }
+        }
+    }
+    return false;
+}
+
 QString CuFormulaParseHelper::m_buildSrcPattern() const
 {
+    int siz = m_src_patterns.values().size();
     QString pattern = "((?:";
-    for(int i = 0; i < m_src_patterns.size(); i++) {
-        pattern += m_src_patterns[i];
-        if(i < m_src_patterns.size() - 1)
+    for(int i = 0; i < siz; i++) {
+        pattern += QString::fromStdString(m_src_patterns.values()[i]);
+        if(i < siz - 1)
             pattern += ")|(?:";
     }
     pattern += "))";

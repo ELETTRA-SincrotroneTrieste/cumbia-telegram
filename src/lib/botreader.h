@@ -70,6 +70,8 @@ public:
 
     bool hasNoFormula() const;
 
+    bool needsHost() const;
+
     /**
      * @brief command the command that originated the reader
      *
@@ -84,6 +86,8 @@ public:
     void setCommand(const QString& cmd);
 
     QString host() const;
+
+    QString getAppliedHost() const;
 
     QDateTime startedOn() const;
 

@@ -13,7 +13,7 @@
  */
 HistoryEntry::HistoryEntry(int idx, int u_id, const QDateTime &ts,
                            const QString &cmd, const QString &ty,
-                           const QString &_host)
+                           const QString &_host, const QString &desc)
 {
     index = idx;
     user_id = u_id;
@@ -23,6 +23,7 @@ HistoryEntry::HistoryEntry(int idx, int u_id, const QDateTime &ts,
     host = _host;
     is_active = false;
     chat_id = -1;
+    description = desc;
 }
 
 /**
@@ -37,7 +38,7 @@ HistoryEntry::HistoryEntry(int idx, int u_id, const QDateTime &ts,
  * @param _host the associated host
  */
 HistoryEntry::HistoryEntry(int u_id, const QString &cmd, const QString &typ,
-                           const QString &_host)
+                           const QString &_host, const QString& descr)
 {
     user_id = u_id;
     command = cmd;
@@ -47,6 +48,7 @@ HistoryEntry::HistoryEntry(int u_id, const QString &cmd, const QString &typ,
     datetime = QDateTime::currentDateTime();
     chat_id = -1;
     index = -1;
+    description = descr;
 }
 
 HistoryEntry::HistoryEntry()
@@ -84,6 +86,11 @@ QString HistoryEntry::formatEntry_msg(int idx, int ttl, bool is_bookmark) const
     QString msg;
     // 1. type + source [+formula if not empty]
     msg += QString::number(idx+1) + ". "; // numbered list
+
+    // 2. description?
+    if(!description.isEmpty())
+        msg += QString("📝   %1\n").arg(description);
+
     QString cmd = command;
     cmd = FormulaHelper().escape(cmd);
     msg += "<i>" + cmd + "</i>";

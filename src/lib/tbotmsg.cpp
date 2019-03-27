@@ -3,6 +3,8 @@
 #include <QJsonValue>
 #include <cumacros.h>
 #include <QDateTime>
+#include <QRegularExpression>
+#include <QRegularExpressionMatch>
 
 TBotMsg::TBotMsg()
 {
@@ -27,6 +29,7 @@ TBotMsg::TBotMsg(const HistoryEntry &he)
     // msg_recv_datetime left invalid
     start_dt = he.datetime;
     m_text = he.toCommand();
+    m_description = he.description;
     // unavailable from HistoryEntry
     is_bot = false;
     update_id = -1;
@@ -58,6 +61,7 @@ void TBotMsg::decode(const QJsonValue &m)
 
     message_id = msg["message_id"].toInt();
     m_text  = msg["text"].toString();
+    m_description = m_stripDescription(m_text);
 
     update_id = m["update_id"].toInt();
 
@@ -104,4 +108,37 @@ QString TBotMsg::text() const
 void TBotMsg::setText(const QString &t)
 {
     m_text = t;
+}
+
+QString TBotMsg::description() const
+{
+    return m_description;
+}
+
+void TBotMsg::setDescription(const QString &desc)
+{
+    m_description = desc;
+}
+
+/**
+ * @brief BotMonitorMsgDecoder::m_stripDescription remove description from text, if present
+ * @param text the text passed *as reference*. Description will be removed from text, if present
+ * @return the description, if present, an empty string otherwise
+ *
+ * \par Example
+ * From the textual command
+ * *monitor sr/diagnostics/dcct/Current < 10  // beam dump*
+ * \li text will be *monitor sr/diagnostics/dcct/Current < 10*
+ * \li the returned string will be *beam dump*
+ *
+ */
+QString TBotMsg::m_stripDescription(QString &text)
+{
+    QRegularExpression re("//(.+)");
+    QRegularExpressionMatch ma = re.match(text);
+    if(ma.hasMatch()) {
+        text = text.remove(ma.captured(0)).trimmed();
+        return ma.captured(1).trimmed();
+    }
+    return QString();
 }
