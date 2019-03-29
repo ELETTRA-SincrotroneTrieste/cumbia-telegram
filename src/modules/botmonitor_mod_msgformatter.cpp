@@ -45,7 +45,7 @@ QString BotmonitorMsgFormatter::monitorStopped(const QString &cmd, const QString
 {
     FormulaHelper fh;
     QString m = fh.escape(cmd);
-    return "stopped monitoring <i>" + m + "</i>: <i>" + fh.escape(msg) + "</i>";
+    return "⏹   stopped monitoring <i>" + m + "</i>: <i>" + fh.escape(msg) + "</i>";
 }
 
 QString BotmonitorMsgFormatter::alreadyMonitoring(const QString &src, const QString &host) const

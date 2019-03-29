@@ -1,4 +1,4 @@
-#ifndef CUBOTSERVEREVENTS_H
+﻿#ifndef CUBOTSERVEREVENTS_H
 #define CUBOTSERVEREVENTS_H
 
 #include <QEvent>
@@ -12,7 +12,8 @@ class CuBotVolatileOperation;
 
 class EventTypes {
 public:
-    enum ETypes { /* ServerProcess = QEvent::User + 10, */ SendMsgRequest = QEvent::User + 12, SendPicRequest,
+    enum ETypes { /* ServerProcess = QEvent::User + 10, */ SendMsgRequest = QEvent::User + 12, EditMsgRequest,
+        SendPicRequest,
                   ReinjectMsgRequest, AddStatsRequest };
 
     static QEvent::Type type(ETypes t) {
@@ -22,10 +23,18 @@ public:
 
 class CuBotServerSendMsgEvent : public QEvent {
 public:
-    CuBotServerSendMsgEvent(int cha_id, const QString& mess, bool _silent, bool _wait_for_reply);
+    CuBotServerSendMsgEvent(int cha_id, const QString& mess, bool _silent, bool _wait_for_reply, int akey);
     bool wait_for_reply, silent;
     QString msg;
-    int chat_id;
+    int chat_id, key;
+};
+
+class CuBotServerEditMsgEvent : public QEvent {
+public:
+    CuBotServerEditMsgEvent(int cha_id, const QString& mess, int reader_idx_key, int _msg_id, bool _wait_for_reply);
+    bool wait_for_reply, silent;
+    QString msg;
+    int chat_id, key, message_id;
 };
 
 class CuBotServerSendPicEvent : public QEvent {

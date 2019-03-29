@@ -626,6 +626,12 @@ bool BotDb::setHost(int user_id, int chat_id, const QString& host, QString &new_
     return !m_err;
 }
 
+/**
+ * @brief BotDb::getSelectedHost returns the host associated to chat_id or the value of the TANGO_HOST environment
+ *        variable if no host has been selected by the user
+ * @param chat_id the chat id of the message
+ * @return the name of the TANGO_HOST
+ */
 QString BotDb::getSelectedHost(int chat_id)
 {
     QString host;
@@ -684,15 +690,19 @@ bool BotDb::getConfig(QMap<QString, QVariant> &datamap, QMap<QString, QString> &
  * @brief BotDb::isAuthorized returns an integer indicating if the operation is allowed or not
  * @param uid the user id
  * @param operation the name of the operation: must match one of the fields of the auth_limits table
+ * @param unregistered a pointer to a boolean value that will be set to true if the user is not
+ *        registered in the *auth* table, false otherwise.
+ *
  * @return -1 the user is not authorized (user still not in auth table - waiting for authorization)
  * @return 0  user is authorized and the value associated to the operation must be taken from the global
  *            configuration because there is no specific authorization for this operation and uid
  * @return >0 the value stored into the auth_limits table for the given uid and operation
+ * @return < 0 the auth_limits table *value* for the given operation and uid is negative: this means
+ *         the given (uid,operation) pair has been explicitly denied by the administrator.
  */
-int BotDb::isAuthorized(int uid, const QString& operation) {
-
+int BotDb::isAuthorized(int uid, const QString& operation, bool* unregistered) {
+    bool user_unregistered;
     // operations contains the list of auth_limits columns
-    const QStringList operations = QStringList() << "host" << "monitors" << "attsearch";
     if(!m_db.isOpen())
         return -1;
     m_msg.clear();
@@ -701,21 +711,17 @@ int BotDb::isAuthorized(int uid, const QString& operation) {
     if(m_err)
         m_msg = "BotDb.isAuthorized: error in query " + q.lastError().text();
     else {
-        if(!q.next())
+        user_unregistered = !q.next();
+        if(unregistered != nullptr)
+            *unregistered = user_unregistered;
+        if(user_unregistered)
             return -1;
         else {
-            qDebug() << __PRETTY_FUNCTION__ << "authorized?? " << q.value(0).toInt() << q.value(1).toInt();
             bool authorized = q.value(1).toInt() > 0;
             if(!authorized)
                 return -1;
 
-            if(!operations.contains(operation)) {
-                printf("BotDb.isAuthorized: \e[1;33;4mWARNING\e[0m operation \e[1;33m%s\e[0m is not in \"auth_limits\" table\n",
-                       qstoc(operation));
-                return 0;
-            }
-
-            m_err = !q.exec(QString("SELECT %1 FROM auth_limits WHERE user_id=%2").arg(operation).arg(uid));
+            m_err = !q.exec(QString("SELECT value FROM auth_limits WHERE operation='%1' AND user_id=%2").arg(operation).arg(uid));
             if(m_err)
                 m_msg = "BotDb.isAuthorized: error in query " + q.lastError().text();
             else {
@@ -852,11 +858,10 @@ void BotDb::createDb(const QString& tablename)
                             " timestamp DATETIME NOT NULL )");
         }
         else if(tablename == "auth_limits") {
-            m_err = !q.exec("CREATE TABLE auth_limits (user_id INTEGER PRIMARY KEY NOT NULL,"
-                            " monitors INTEGER NOT NULL DEFAULT 3, "
-                            " host INTEGER NOT NULL DEFAULT 1, "
-                            " dbsearch INTEGER NOT NULL DEFAULT 1, "
-                            " timestamp DATETIME NOT NULL )");
+            m_err = !q.exec("create table auth_limits (operation TEXT NOT NULL, "
+                            "user_id INTEGER NOT NULL, value INTEGER NOT NULL, "
+                            "timestamp DATETIME NOT NULL, "
+                            "PRIMARY KEY(user_id,operation) )");
         }
         else if(tablename == "private_chats") {
             m_err = !q.exec("CREATE TABLE private_chats (user_id INTEGER NOT NULL,"

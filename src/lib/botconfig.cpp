@@ -28,9 +28,9 @@ BotConfig::BotConfig(BotDb *db)
     d->map["max_avg_poll_period"] = 1000;
     d->map["history_depth"] = 12;
 
-    QStringList default_operations_auth = QStringList() << "monitor" << "reads" << "host" << "dbsearch";
-    d->map["default_monitors_auth"] = 10;
-    d->map["default_reads_auth"] = 1;
+    QStringList default_operations_auth = QStringList() << "monitor" << "read" << "host" << "dbsearch";
+    d->map["default_monitor_auth"] = 10;
+    d->map["default_read_auth"] = 1;
     d->map["default_host_auth"] = 1;
     d->map["default_dbsearch_auth"] = 1;
 
@@ -74,7 +74,6 @@ int BotConfig::getDefaultAuth(const QString &operation) const
     QString key = QString("default_%1_auth").arg(operation);
     if(d->map.contains(key))
         return d->map[key].toInt();
-    perr("BotConfig.getDefaultAuth: operation \"%s\" is not valid", qstoc(operation));
     return -1;
 }
 

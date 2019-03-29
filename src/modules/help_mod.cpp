@@ -11,12 +11,16 @@ public:
     QList<CuBotModule *>modules;
 };
 
-HelpMod::HelpMod(const QList<CuBotModule *> ml, CuBotModuleListener *lis)
+HelpMod::HelpMod(CuBotModuleListener *lis)
 {
     d = new HelpModPrivate;
-    d->modules = ml;
     setBotmoduleListener(lis);
     reset();
+}
+
+void HelpMod::setModuleList(const QList<CuBotModule *> ml)
+{
+    d->modules = ml;
 }
 
 HelpMod::~HelpMod()
@@ -39,7 +43,7 @@ int HelpMod::type() const
 
 QString HelpMod::name() const
 {
-    return "Help";
+    return "help";
 }
 
 QString HelpMod::description() const
@@ -68,8 +72,10 @@ bool HelpMod::process()
 {
     if(d->help_section.contains("modules"))
         getModuleListener()->onSendMessageRequest(d->chat_id, m_module_list(), true);
-    else
+    else {
+        printf("FORKING CRAPPPPP sending msg %s to %d\n", qstoc(m_text(d->help_section)), d->chat_id);
         getModuleListener()->onSendMessageRequest(d->chat_id, m_text(d->help_section), true); // true: silent
+    }
     return true;
 }
 

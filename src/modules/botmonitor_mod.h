@@ -49,7 +49,7 @@ signals:
 
     void startError(int chat_id, const QString& src, const QString& message);
 
-    void newMonitorData(int chat_id, const CuData& data);
+    void newMonitorData(int chat_id, const CuData& data, int reader_idx);
 
     void onFormulaChanged(int user_id, int chat_id, const QString& src, const QString& host, const QString& old, const QString& new_f);
 
@@ -86,12 +86,9 @@ private slots:
 
     void m_onLastUpdate(int chat_id, const CuData& dat);
 
-//    int m_findIndexForNewReader(int chat_id);
-
     void m_onReaderModeChanged(BotReader::RefreshMode rm);
 
-
-    void onNewMonitorData(int chat_id, const CuData& da);
+    void onNewMonitorData(int chat_id, const CuData& da, int reader_idx);
 
     void onSrcMonitorStopped(int user_id, int chat_id, const QString& src, const QString& command, const QString& host, const QString& message);
 

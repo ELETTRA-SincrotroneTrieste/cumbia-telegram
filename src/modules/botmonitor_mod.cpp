@@ -66,8 +66,8 @@ BotMonitor::BotMonitor(QObject *parent, const CumbiaSupervisor &cu_s,
     d->max_avg_poll_period = 1000;
     d->formula_parser_helper = new CuFormulaParseHelper(d->ctrl_factory_pool);
 
-    connect(this, SIGNAL(newMonitorData(int, const CuData&)),
-            this, SLOT(onNewMonitorData(int, const CuData&)));
+    connect(this, SIGNAL(newMonitorData(int, const CuData&, int)),
+            this, SLOT(onNewMonitorData(int, const CuData&, int)));
     connect(this, SIGNAL(stopped(int, int, QString, QString, QString, QString)),
             this, SLOT(onSrcMonitorStopped(int, int, QString, QString,QString, QString)));
     connect(this, SIGNAL(onFormulaChanged(int, int, QString,QString,QString,QString)),
@@ -265,7 +265,7 @@ void BotMonitor::m_onNewData(int chat_id, const CuData &da)
     }
     // emit new data if it has a value
     else if(da.containsKey("value"))
-        emit newMonitorData(chat_id, da);
+        emit newMonitorData(chat_id, da, reader->index());
 }
 
 void BotMonitor::m_onFormulaChanged(int user_id, int chat_id, const QString &src, const QString &old, const QString &new_f, const QString& host)
@@ -319,11 +319,18 @@ void BotMonitor::m_onReaderModeChanged(BotReader::RefreshMode rm)
  * @param da
  *
  */
-void BotMonitor::onNewMonitorData(int chat_id, const CuData &da)
+void BotMonitor::onNewMonitorData(int chat_id, const CuData &da, int reader_idx)
 {
     DataMsgFormatter mf;
     CuBotModuleListener *lis = getModuleListener();
-    lis->onSendMessageRequest(chat_id, mf.fromData_msg(da, DataMsgFormatter::FormatShort, d->src_description), da["silent"].toBool());
+    bool silent = da["silent"].toBool(); // if true, low priority: monitor. If false hi pri: alert
+    const QString m = mf.fromData_msg(da, DataMsgFormatter::FormatShort, d->src_description);
+    if(silent) {
+        lis->onEditMessageRequest(chat_id, reader_idx, m);
+        printf("\e[1;33mBotMonitor::onNewMonitorData: chat_id %d requesting edit index %d\e[0m\n", chat_id, reader_idx);
+    }
+    else
+        lis->onSendMessageRequest(chat_id, m, silent);
     lis->onStatsUpdateRequest(chat_id, da);
 }
 
@@ -396,7 +403,7 @@ int BotMonitor::type() const
 
 QString BotMonitor::name() const
 {
-    return "BotMonitor";
+    return "monitor";
 }
 
 QString BotMonitor::description() const
@@ -430,22 +437,20 @@ bool BotMonitor::process()
 {
     bool success = false;
     BotMonitorMsgDecoder::Type t = d->mon_msg_decoder->type();
-    int chat_id = d->mon_msg_decoder->chatId();
+    const int & chat_id = d->mon_msg_decoder->chatId();
+    const int &uid = d->mon_msg_decoder->userId();
+    const QString& txt = d->mon_msg_decoder->text();
     CuBotModuleListener *lis = getModuleListener();
     if(t == BotMonitorMsgDecoder::Monitor || t == BotMonitorMsgDecoder::Alert) {
         QString src = d->mon_msg_decoder->source();
         QString host; // if m.hasHost use it, it comes from a fake history message created ad hoc by History
         d->mon_msg_decoder->hasHost() ? host = d->mon_msg_decoder->host()
                 : host = ModuleUtils().getHost(d->mon_msg_decoder->chatId(), getDb(), d->ctrl_factory_pool); // may be empty. If so, TANGO_HOST will be used
-        // src = CuFormulaParseHelper().injectHost(host, src);
-        // m.start_dt will be invalid if m is decoded by a real message
-        // m.start_dt is forced to a given date and time when m is a fake msg built
-        // from the database history
-        success = startRequest(d->mon_msg_decoder->userId(),
-                               chat_id,
-                               getBotConfig()->getDefaultAuth("monitors"),
-                               src,
-                               d->mon_msg_decoder->text(),
+        // authorization limits
+        int uid_mon_limit = getDb()->isAuthorized(uid, name());
+        success = startRequest(uid, chat_id,
+                               uid_mon_limit != 0 ? uid_mon_limit : getBotConfig()->getDefaultAuth(name()),
+                               src, txt,
                                t == BotMonitorMsgDecoder::Monitor ? BotReader::Low : BotReader::High,
                                host,
                                d->mon_msg_decoder->description(),

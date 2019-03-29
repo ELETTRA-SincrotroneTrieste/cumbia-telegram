@@ -1,0 +1,13 @@
+<b>Alias</b>
+
+In the cumbia-telegram bot, you can <i>alias</i> pretty everything, apart from text in comments, that is used as description in monitor and alerts.
+Alias are shortcuts that stand for <i>source names</i> or even <i>entire commands</i>:
+
+<i>alias ecurr sr/diagnostics/dcct_s4/current  // Elettra current</i>
+<i>alias bd alert sr/diagnostics/dcct_s4/current %26#60; 10  // beam dump</i>
+
+Please note the <i>description</i> that follows the alias definition after the <i>//</i> marker.
+
+Alias can be combined together, even though this may be unsafe since the number of alias is limited (older ones are deleted):
+
+<i>alias bd alert ecurr %26#60; 10  // beam dump</i>

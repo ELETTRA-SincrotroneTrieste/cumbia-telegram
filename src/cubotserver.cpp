@@ -19,6 +19,7 @@
 #include "botreader_mod.h"
 #include "host_mod.h"
 #include "help_mod.h"
+#include "cubotmsgtracker.h"
 
 #include <cumacros.h>
 #include <QtDebug>
@@ -57,6 +58,7 @@ public:
     Auth* auth;
     BotControlServer *control_server;
     BotStats *stats;
+    CuBotMsgTracker *msg_tracker;
     QString bot_token, db_filenam;
 
     QMap<int, CuBotModule *> modules_map;
@@ -74,6 +76,7 @@ CuBotServer::CuBotServer(QObject *parent, const QString& bot_token, const QStrin
     d->auth = nullptr;
     d->control_server = nullptr;
     d->stats = nullptr;
+    d->msg_tracker = nullptr;
     d->bot_token = bot_token;
     d->db_filenam = sqlite_db_filenam;
 }
@@ -103,8 +106,13 @@ bool CuBotServer::event(QEvent *e)
     }
     else if(e->type() == EventTypes::type(EventTypes::SendMsgRequest)) {
         CuBotServerSendMsgEvent *sendMsgE = static_cast<CuBotServerSendMsgEvent *>(e);
-        d->bot_sender->sendMessage(sendMsgE->chat_id, sendMsgE->msg, sendMsgE->silent, sendMsgE->wait_for_reply);
+        d->bot_sender->sendMessage(sendMsgE->chat_id, sendMsgE->msg, sendMsgE->silent, sendMsgE->wait_for_reply, sendMsgE->key);
         sendMsgE->accept();
+    }
+    else if(e->type() == EventTypes::type(EventTypes::EditMsgRequest)) {
+        CuBotServerEditMsgEvent *editMsgE = static_cast<CuBotServerEditMsgEvent *>(e);
+        d->bot_sender->editMessage(editMsgE->chat_id, editMsgE->key, editMsgE->msg, editMsgE->message_id, editMsgE->wait_for_reply);
+        editMsgE->accept();
     }
     else if(e->type() == EventTypes::type(EventTypes::SendPicRequest)) {
         CuBotServerSendPicEvent *sendPicE = static_cast<CuBotServerSendPicEvent *>(e);
@@ -139,19 +147,26 @@ void CuBotServer::onMessageReceived(const TBotMsg &m)
         CuBotModule *module = d->modules_map[type];
         int t = module->decode(m);
         if(t > 0) {
-           /* if(!d->auth->isAuthorized(m.user_id, module->name())) {
+            if(!d->auth->isAuthorized(m.user_id, module->name())) {
                 d->bot_sender->sendMessage(m.chat_id, m_unauthorized_msg(m.username, module->name(),
-                                                                                  d->auth->reason()));
+                                                                         d->auth->reason()));
                 fprintf(stderr, "\e[1;31;4mUNAUTH\e[0m: \e[1m%s\e[0m [uid %d] not authorized to exec \e[1;35m%s\e[0m: \e[3m\"%s\"\e[0m\n",
                         qstoc(m.username), m.user_id, qstoc(module->name()), qstoc(d->auth->reason()));
             }
-            else*/ {
+            else {
                 printf("CuBotServer::onMessageReceived: module %s [%d] decoded the message\n", qstoc(module->name()), t);
                 module->process();
             }
             break;
         }
     }
+}
+
+void CuBotServer::onMessageSent(int chat_id, int message_id, int key)
+{
+    printf("\e[1;32mCuBotServer:onMessageSent: chat_id %d message_id %d key %d\e[0m\n",
+           chat_id, message_id, key);
+    key > -1 ? d->msg_tracker->addMsg(chat_id, message_id, key) : d->msg_tracker->addMsg(chat_id, message_id);
 }
 
 void CuBotServer::onReaderUpdate(int chat_id, const CuData &data)
@@ -180,16 +195,16 @@ void CuBotServer::start()
         }
         if(!d->bot_sender) {
             d->bot_sender = new CuBotSender(this, d->bot_token);
+            connect(d->bot_sender, SIGNAL(messageSent(int, int, int)), this, SLOT(onMessageSent(int,int,int)));
         }
-        if(!d->volatile_ops)
-            d->volatile_ops = new CuBotVolatileOperations();
-
         if(!d->auth)
             d->auth = new Auth(d->bot_db, d->botconf);
 
         d->control_server = new BotControlServer(this);
         connect(d->control_server, SIGNAL(newMessage(int, int, ControlMsg::Type, QString, QLocalSocket*)),
                 this, SLOT(onNewControlServerData(int, int, ControlMsg::Type, QString, QLocalSocket*)));
+
+        d->msg_tracker = new CuBotMsgTracker(4);
 
         if(!d->stats)
             d->stats = new BotStats(this);
@@ -199,7 +214,9 @@ void CuBotServer::start()
         m_loadPlugins();
 
         // after loading modules and plugins load help: needs the list of registered modules
-        m_registerModule(new HelpMod(d->modules_map.values(), this));
+        HelpMod *helpMod = new HelpMod(this);
+        m_registerModule(helpMod);
+        helpMod->setModuleList(d->modules_map.values());
 
         m_restoreProcs();
 
@@ -248,6 +265,10 @@ void CuBotServer::stop()
         if(d->stats) {
             delete d->stats;
             d->stats = nullptr;
+        }
+        if(d->msg_tracker) {
+            delete d->msg_tracker;
+            d->msg_tracker = nullptr;
         }
     }
 }
@@ -318,7 +339,7 @@ void CuBotServer::m_loadPlugins()
                     pluginsonames_map[botplui->type()] = pa.section('/', -1);
                 else
                     perr("CuBotServer: \e[1;31mfailed to register plugin \"\e[0;31m%s\e[1;31m\"\e[0m", qstoc(pa.section('/', -1)));
-               }
+            }
         }
         else {
             perr("failed to load plugin loader under path %s: %s", qstoc(pa), qstoc(loader.errorString()));
@@ -328,7 +349,7 @@ void CuBotServer::m_loadPlugins()
         CuBotModule *i = d->modules_map[key];
         if(i->isPlugin())
             printf("[bot] \e[1;32m+\e[0m plugin \"\e[1;32m%20s\e[0m | type \e[1;32m%4d\e[0m | [%70s] | \e[0;36m%50s\e[0m\n",
-               qstoc(i->name()), i->type(), qstoc(i->description()), qstoc(pluginsonames_map[key]));
+                   qstoc(i->name()), i->type(), qstoc(i->description()), qstoc(pluginsonames_map[key]));
     }
 }
 
@@ -396,16 +417,17 @@ bool CuBotServer::m_restoreProcs()
 
     int fixed = d->bot_db->fixStaleItems(restore_cmds);
     if(fixed > 0)
-       perr("CuBotServer: database fixes were needed and affected %d entries resulting still running while they are not", fixed);
+        perr("CuBotServer: database fixes were needed and affected %d entries resulting still running while they are not", fixed);
 
     return success;
 }
 
 bool CuBotServer::m_broadcastShutdown()
 {
-    QList<int> chat_ids = d->bot_db->getChatsWithActiveMonitors();
-    foreach(int id, chat_ids) // last param true: wait for reply
-        d->bot_sender->sendMessage(id, GenMsgFormatter().botShutdown(), false, true);
+//    printf("\n\e[1;35mCuBotServer.m_broadcastShutdown --- TEMPORARILY DISABLED ---- \e[0m\n\n");
+        QList<int> chat_ids = d->bot_db->getChatsWithActiveMonitors();
+        foreach(int id, chat_ids) // last param true: wait for reply
+            d->bot_sender->sendMessage(id, GenMsgFormatter().botShutdown(), false, true);
     return true;
 }
 
@@ -434,8 +456,24 @@ bool CuBotServer::m_registerModule(CuBotModule *mod)
 
 void CuBotServer::onSendMessageRequest(int chat_id, const QString &msg, bool silent, bool wait_for_reply)
 {
-    CuBotServerSendMsgEvent *sendMsgEvent = new CuBotServerSendMsgEvent(chat_id, msg, silent, wait_for_reply);
+    CuBotServerSendMsgEvent *sendMsgEvent = new CuBotServerSendMsgEvent(chat_id, msg, silent, wait_for_reply, -1);
     qApp->postEvent(this, sendMsgEvent);
+}
+
+void CuBotServer::onEditMessageRequest(int chat_id, int key, const QString &msg, bool wait_for_reply)
+{
+    int message_id = d->msg_tracker->getMessageId(chat_id, key); // key is reader idx in database
+    if(message_id < 0) {
+        printf("CuBotServer::onEditMessageRequest: \e[1;31mfalling back to new message for chat_id %d key %d msg %s\e[0m\e[0m\n",
+               chat_id, key, qstoc(msg));
+        CuBotServerSendMsgEvent *sendMsgEvent = new CuBotServerSendMsgEvent(chat_id, msg, true, wait_for_reply, key);
+        qApp->postEvent(this, sendMsgEvent);
+    }
+    else {
+        printf("\e[1;33mCuBotServer.onEditMessageRequest: chat_id %d msg_id %d KEY %d\e[0m\n", chat_id, message_id, key);
+        CuBotServerEditMsgEvent *editMsgE = new CuBotServerEditMsgEvent(chat_id, msg, key, message_id, wait_for_reply);
+        qApp->postEvent(this, editMsgE);
+    }
 }
 
 void CuBotServer::onStatsUpdateRequest(int chat_id, const CuData &data)
@@ -461,3 +499,5 @@ QString CuBotServer::m_unauthorized_msg(const QString &username, const QString& 
 
     return s;
 }
+
+

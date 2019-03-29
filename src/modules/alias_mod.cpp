@@ -9,14 +9,16 @@
 AliasEntry::AliasEntry()
 {
     in_history = false;
+    index = -1;
 }
 
-AliasEntry::AliasEntry(const QString &nam, const QString &repl, const QString &descrip)
+AliasEntry::AliasEntry(const QString &nam, const QString &repl, const QString &descrip, int idx)
 {
      description = descrip;
      replaces = repl;
      name = nam;
      in_history = false;
+     index = idx;
 }
 
 class AliasProcPrivate {
@@ -28,16 +30,18 @@ public:
     TBotMsg msg_in;
     int link_idx;
     AliasModule::Mode mode;
-    QStringList alias_sections;
+    QString name, replaces; // alias name, replacement
     BotConfig *bot_conf;
 };
 
 
 void AliasModule::reset() {
     d->link_idx = -1;
-    d->alias_sections.clear();
+    d->replaces.clear();
     d->mode = Invalid;
     d->out.clear();
+    d->name.clear();
+    d->replaces.clear();
 }
 
 AliasModule::AliasModule(BotDb *db, BotConfig *conf, CuBotModuleListener *l)
@@ -73,12 +77,12 @@ QList<AliasEntry> AliasModule::getAlias(int user_id, const QString &name, const 
         return ae;
     d->msg.clear();
     QSqlQuery q(m_db);
-    QString query = QString("SELECT name,replaces,description FROM alias WHERE user_id=%1 ").arg(user_id);
-    !name.isEmpty() ?query += QString(" AND name='%1' ORDER BY LENGTH(name) DESC").arg(name)
-            : query += "ORDER BY LENGTH(name) DESC";
+    QString query = QString("SELECT name,replaces,description,idx FROM alias WHERE user_id=%1 ").arg(user_id);
+    !name.isEmpty() ?query += QString(" AND name='%1' ORDER BY timestamp ASC").arg(name)
+            : query += "ORDER BY timestamp ASC";
     err = !q.exec(query);
     while(!err && q.next()) {
-        AliasEntry e(q.value(0).toString(), q.value(1).toString(), q.value(2).toString());
+        AliasEntry e(q.value(0).toString(), q.value(1).toString(), q.value(2).toString(), q.value(3).toInt());
         QSqlQuery q2(m_db);
         err = !q2.exec(QString("SELECT host,h_idx FROM history WHERE user_id=%1 AND command='%2'")
                        .arg(user_id).arg(e.replaces));
@@ -95,7 +99,6 @@ QList<AliasEntry> AliasModule::getAlias(int user_id, const QString &name, const 
     }
     return ae;
 }
-
 
 QString AliasModule::findAndReplace(const QString &in, const QList<AliasEntry> &aliases)
 {
@@ -126,7 +129,7 @@ int AliasModule::type() const
 
 QString AliasModule::name() const
 {
-    return "AliasProc";
+    return "alias";
 }
 
 QString AliasModule::description() const
@@ -145,9 +148,9 @@ void AliasModule::setDb(BotDb *db)
     d->qsqld = *db->getSqlDatabase();
     if(!d->qsqld.tables().contains("alias")) {
         QSqlQuery q(d->qsqld);
-        err = !q.exec("create table alias (user_id INTEGER NOT NULL, name TEXT NOT NULL, "
+        err = !q.exec("create table alias (idx INTEGER NOT NULL, user_id INTEGER NOT NULL, name TEXT NOT NULL, "
                       "replaces TEXT NOT NULL, description TEXT DEFAULT '', "
-                      "timestamp DATETIME NOT NULL, PRIMARY KEY(user_id,name) )");
+                      "timestamp DATETIME NOT NULL, PRIMARY KEY(user_id,name), UNIQUE(user_id,idx) )");
         if(err)
             d->msg = "AliasProc.setDb: failed to create table \"alias\": " + q.lastQuery() + ": " + q.lastError().text();
     }
@@ -184,16 +187,14 @@ int AliasModule::decode(const TBotMsg &msg)
             }
         }
         if(d->mode == Invalid) {
-
-            // ^alias\s+([A-Za-z0-9_]+)\s+(\S+)\s*(.*)
-            const char *alias_match = "^alias\\s+([A-Za-z0-9_]+)\\s+(\\S+)\\s*(.*)"; // escaped
+            // ^alias\s+([A-Za-z0-9_]+)\s+(.*)
+            const char *alias_match = "^alias\\s+([A-Za-z0-9_]+)\\s+(.*)"; // escaped
             re.setPattern(alias_match);
             match = re.match(text);
             if(match.hasMatch()) {
                 d->mode = SetAlias;
-                // caller will use getArgs to get the captures
-                for(int i = 1; i < match.capturedTexts().size(); i++)
-                    d->alias_sections << match.captured(i);
+                d->name = match.captured(1);
+                d->replaces = match.captured(2);
             }
             else {
                 // alias something: provide info about the replacement
@@ -201,7 +202,7 @@ int AliasModule::decode(const TBotMsg &msg)
                 re.setPattern("^alias\\s+([A-Za-z0-9_]+)");
                 match = re.match(text);
                 if(match.hasMatch()) {
-                    d->alias_sections << match.captured(1);
+                    d->name = match.captured(1);
                     d->mode = ShowAlias;
                 }
                 else if(text.startsWith("alias")) {
@@ -233,8 +234,8 @@ bool AliasModule::process()
         d->listener->onReinjectMessage(d->msg_in);
     }
     else if(d->mode == SetAlias) {
-        success = m_db_insertAlias(d->msg_in.user_id, d->alias_sections, d->bot_conf->getInt("max_alias_cnt"));
-        d->listener->onSendMessageRequest(d->msg_in.chat_id, m_aliasInsertMsg(success, d->alias_sections, d->db_msg));
+        success = m_db_insertAlias(d->msg_in.user_id, d->name, d->replaces, d->msg_in.description(), d->bot_conf->getInt("max_alias_cnt"));
+        d->listener->onSendMessageRequest(d->msg_in.chat_id, m_aliasInsertMsg(success, d->name, d->replaces, d->msg_in.description(), d->db_msg));
     }
     else if(d->mode == ExecAlias) {
         HistoryEntry he = m_db_getFromHistory(d->msg_in.user_id, d->link_idx);
@@ -247,13 +248,13 @@ bool AliasModule::process()
         }
     }
     else if(d->mode == ShowAlias) {
-        QString aname;
-        d->alias_sections.size() > 1 ? aname = d->alias_sections.first() : aname = "";
-        QList<AliasEntry> alist = getAlias(d->msg_in.user_id, aname, d->qsqld);
-        d->listener->onSendMessageRequest(d->msg_in.chat_id, m_aliasListMsg(aname, alist));
+        QList<AliasEntry> alist = getAlias(d->msg_in.user_id, d->name, d->qsqld);
+        d->listener->onSendMessageRequest(d->msg_in.chat_id, m_aliasListMsg(d->name, alist));
     }
     else if(d->mode == DelAlias) {
-
+        QString name, replaces;
+        m_db_deleteAlias(d->msg_in.user_id, d->link_idx, name, replaces);
+        d->listener->onSendMessageRequest(d->msg_in.chat_id, m_aliasDeleteMsg(name, replaces));
     }
     else if(d->mode == AliasCmdErr)
         return false;
@@ -275,50 +276,70 @@ bool AliasModule::isVolatileOperation() const
     return false;
 }
 
-bool AliasModule::m_db_insertAlias(int user_id, const QStringList &parts, int max_alias_cnt)
+bool AliasModule::m_db_deleteAlias(int user_id, int alias_idx, QString& name, QString& replaces)
 {
     if(!d->qsqld.isOpen())
         return -1;
     d->msg.clear();
+    d->db_msg.clear();
     QSqlQuery q(d->qsqld);
-    bool err = parts.size() < 3;
-    QString alias = parts[0];
-    QString replaces = parts[1];
-    QString desc;
-    parts.size() >= 3 ? desc = parts[2] : desc = "";
+    bool err = !q.exec(QString("SELECT name,replaces FROM alias WHERE user_id=%1 AND idx=%2").arg(user_id).arg(alias_idx));
+    if(!err && q.next()) {
+        name = q.value(0).toString();
+        replaces = q.value(1).toString();
+        err = !q.exec(QString("DELETE FROM alias WHERE user_id=%1 AND idx=%2").arg(user_id).arg(alias_idx));
+    }
+    else if(!err)
+        d->db_msg = QString("AliasModule: alias index /XA%1 invalid. Use /alias to get an up to date list of aliases")
+                .arg(alias_idx);
+    if(err)
+        d->msg = "AliasModule.m_db_deleteAlias: error executing " + q.lastQuery() + ": " + q.lastError().text();
+    return !err;
+}
 
-    err = !q.exec(QString("SELECT _rowid_,replaces FROM alias WHERE user_id=%1 AND name='%2'").
-                    arg(user_id).arg(alias));
+bool AliasModule::m_db_insertAlias(int user_id, const QString& name,
+                                   const QString& replaces,
+                                   const QString& description, int max_alias_cnt)
+{
+    if(!d->qsqld.isOpen())
+        return -1;
+    d->msg.clear();
+    d->db_msg.clear();
+    QSqlQuery q(d->qsqld);
+
+    bool err = !q.exec(QString("SELECT idx,replaces FROM alias WHERE user_id=%1 AND name='%2'").
+                    arg(user_id).arg(name));
     if(!err) {
         if(q.next()) {
             QString old_replaces = q.value(1).toString();
             err = !q.exec(QString("UPDATE alias SET timestamp=datetime(), replaces='%1', description='%2'"
-                                    " WHERE _rowid_=%3").arg(replaces).arg(desc).arg(q.value(0).toInt()));
+                                    " WHERE idx=%3").arg(replaces).arg(description).arg(q.value(0).toInt()));
             d->db_msg = QString("%1 alias has been updated from %2")
-                    .arg(alias).arg(old_replaces);
+                    .arg(name).arg(old_replaces);
         }
         else {
-            err = !q.exec(QString("SELECT _rowid_,timestamp,name FROM alias WHERE user_id=%1 ORDER BY timestamp DESC")
+            err = !q.exec(QString("SELECT idx,timestamp,name FROM alias WHERE user_id=%1 ORDER BY timestamp DESC")
                             .arg(user_id));
 
             // remove older entries according to the maximum number of allowed alias entries
-            int count = 0;
+            QList<int> indexes;
+            int count = 0, index;
             while(q.next() && !err) {
                 count++;
+                index = q.value(0).toInt();
+                indexes << index; // gather per user idx from alias table
                 if(count > max_alias_cnt) {
-                    int rid = q.value(0).toInt();
                     QSqlQuery delq;
-                    err = !delq.exec(QString("DELETE FROM alias WHERE _rowid_=%1").arg(rid));
+                    err = !delq.exec(QString("DELETE FROM alias WHERE idx=%1").arg(index));
                     d->db_msg += QString("removed old alias \"%1\" from %2 (max allowed aliases: %3)\n")
                             .arg(q.value(2).toString()).arg(q.value(1).toDateTime().toString("yyyy.MM.dd hh.mm.ss"))
                             .arg(max_alias_cnt);
                 }
-            }
+            } // end while q.next
             if(!err) {
-
-                err = !q.exec(QString("INSERT INTO alias VALUES(%1, '%2', '%3', '%4', datetime())")
-                                .arg(user_id).arg(alias).arg(replaces).arg(desc));
-                printf("executed query %s\n", qstoc(q.lastQuery()));
+                int available_idx = m_findFirstAvailableIdx(indexes); // UNIQUE constraint (user_id,idx)
+                err = !q.exec(QString("INSERT INTO alias VALUES(%1, %2, '%3', '%4', '%5', datetime())")
+                                .arg(available_idx).arg(user_id).arg(name).arg(replaces).arg(description));
             }
         }
     }
@@ -337,6 +358,7 @@ HistoryEntry AliasModule::m_db_getFromHistory(int user_id, int index)
     if(!d->qsqld.isOpen())
         return he;
     d->msg.clear();
+    d->db_msg.clear();
     QSqlQuery q(d->qsqld); //             0         1     2     3        4
     bool err = !q.exec(QString("SELECT timestamp,command,type,host,description FROM history WHERE user_id=%1 AND h_idx=%2")
                        .arg(user_id).arg(index));
@@ -351,23 +373,19 @@ HistoryEntry AliasModule::m_db_getFromHistory(int user_id, int index)
     return he;
 }
 
-QString AliasModule::m_aliasInsertMsg(bool success, const QStringList& alias_parts, const QString &additional_message) const {
+QString AliasModule::m_aliasInsertMsg(bool success, const QString& nam, const QString& replac, const QString& descriptio, const QString &additional_message) const {
     QString s;
-    success = success & alias_parts.size() > 2;
-    QString desc, name, replaces;
     FormulaHelper fh;
-    alias_parts.size() > 2 ? desc = fh.escape(alias_parts[2]) : desc = "";
-    if(alias_parts.size() > 0)
-        name = fh.escape(alias_parts[0]);
+    QString name = fh.escape(nam);
+    QString replaces = fh.escape(replac);
     if(success) {
-        replaces = fh.escape(alias_parts[1]);
         s += "👍   successfully added alias:\n";
         s += QString("<b>%1</b> replaces: <i>%2</i>").arg(name).arg(replaces);
-        if(!desc.isEmpty()) {
-            s += "\n<i>" + desc + "</i>";
+        if(!descriptio.isEmpty()) {
+            s += "\n📝   <i>" + descriptio + "</i>";
         }
     }
-    else if(alias_parts.size() > 0) {
+    else {
         s = "👎   failed to insert alias <b>" + name + "</b>";
     }
     if(!additional_message.isEmpty())
@@ -392,7 +410,38 @@ QString AliasModule::m_aliasListMsg(const QString& name, const QList<AliasEntry>
         for(int i = 0; i < a.in_history_idxs.size(); i++) {
             s += QString(" [/A%1] [%2]").arg(a.in_history_idxs[i]).arg(a.in_history_hosts[i]);
         }
-        a.description.isEmpty() ? s += "\n" : s += "   (" + fh.escape(a.description) + ")\n";
+
+        a.description.isEmpty() ? s += "" : s += "   (" + fh.escape(a.description) + ")";
+
+        s += QString(" [/XA%1]\n").arg(a.index);
+
+        i++;
     }
     return s;
+}
+
+QString AliasModule::m_aliasDeleteMsg(const QString &name, const QString &replaces) const
+{
+    QString s;
+    if(!name.isEmpty() && !replaces.isEmpty()) {
+        s += "👍   successfully removed alias: ";
+        s += QString("<b>%1</b> --> <i>%2</i>").arg(name).arg(replaces);
+    }
+    else {
+        s = "👎   failed to remove alias: " + d->db_msg;
+    }
+    return s;
+}
+
+
+int AliasModule::m_findFirstAvailableIdx(const QList<int>& in_idxs)
+{
+    int a_idx = -1, i;
+    for(i = 1; i <= in_idxs.size() && a_idx < 0; i++) {
+        if(!in_idxs.contains(i))
+            a_idx = i;
+    }
+    if(a_idx < 0)
+        a_idx = i;
+    return a_idx;
 }

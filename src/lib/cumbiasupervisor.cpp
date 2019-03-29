@@ -43,9 +43,9 @@ void CumbiaSupervisor::setup()
         //    const char* ep_pattern = "[A-Za-z0-9\\.\\-_]+:[A-Za-z0-9\\.\\-_]+";
 
         // Tango attribute patterns
-        // (?:[A-Za-z0-9]+\:\d+)/[A-Za-z0-9_\.]+/[A-Za-z0-9_\.]+/[A-Za-z0-9_\.]+/[A-Za-z0-9_\.]+
+        // (?:[A-Za-z0-9]+\:\d+)/[A-Za-z0-9_\.\-]+/[A-Za-z0-9_\.\-]+/[A-Za-z0-9_\.\-]+/[A-Za-z0-9_\.\-]+
         const char *h_p = "(?:[A-Za-z0-9\\.\\-_]+\\:\\d+)"; // host pattern e.g. hokuto:20000
-        const char *t_p = "[A-Za-z0-9_\\.]+"; // t_p tango pattern
+        const char *t_p = "[A-Za-z0-9_\\.\\-]+"; // t_p tango pattern
         QString a_p = QString("%1/%1/%1/%1").arg(t_p); // a_p  attribute pattern
         QString h_a_p = QString("%1/%2/%2/%2/%2").arg(h_p).arg(t_p);
         std::vector<std::string> tg_patterns;

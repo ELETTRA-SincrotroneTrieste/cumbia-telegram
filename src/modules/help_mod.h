@@ -11,8 +11,9 @@ class HelpMod : public CuBotModule
 public:
     enum Type { HelpModType = 125 };
 
-    HelpMod(const QList<CuBotModule *> ml, CuBotModuleListener *lis);
+    HelpMod(CuBotModuleListener *lis);
 
+    void setModuleList(const QList<CuBotModule *> ml);
     ~HelpMod();
 
     void reset();

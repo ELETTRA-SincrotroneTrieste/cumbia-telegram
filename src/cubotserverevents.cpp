@@ -11,13 +11,14 @@ CuBotServerProcessEvent::CuBotServerProcessEvent(CuBotModule *mod, int chat_i) :
 */
 
 CuBotServerSendMsgEvent::CuBotServerSendMsgEvent(int cha_id, const QString &mess,
-                                                 bool _silent, bool _wait_for_reply)
+                                                 bool _silent, bool _wait_for_reply, int akay)
     : QEvent(EventTypes::type(EventTypes::SendMsgRequest))
 {
     chat_id = cha_id;
     msg = mess;
     silent = _silent;
     wait_for_reply = _wait_for_reply;
+    key = akay;
 }
 
 CuBotServerSendPicEvent::CuBotServerSendPicEvent(int cha_id, const QByteArray &img)
@@ -38,4 +39,15 @@ CuBotServerAddStatsEvent::CuBotServerAddStatsEvent(int ch_id, const CuData &da)
 {
     chat_id = ch_id;
     data = da;
+}
+
+CuBotServerEditMsgEvent::CuBotServerEditMsgEvent(int cha_id, const QString &mess,
+                                                 int reader_idx_key, int _msg_id, bool _wait_for_reply)
+ : QEvent(EventTypes::type(EventTypes::EditMsgRequest))
+{
+    chat_id = cha_id;
+    msg = mess;
+    key = reader_idx_key;
+    message_id = _msg_id;
+    wait_for_reply = _wait_for_reply;
 }

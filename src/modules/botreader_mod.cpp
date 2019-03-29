@@ -81,7 +81,7 @@ int BotReaderModule::type() const {
 
 QString BotReaderModule::name() const
 {
-    return "Reader";
+    return "reader";
 }
 
 QString BotReaderModule::description() const

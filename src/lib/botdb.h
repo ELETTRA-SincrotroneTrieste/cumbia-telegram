@@ -69,7 +69,7 @@ public:
 
     bool getConfig(QMap<QString, QVariant>& datamap, QMap<QString, QString> &descmap);
 
-    int isAuthorized(int uid, const QString &operation);
+    int isAuthorized(int uid, const QString &operation, bool *unregistered = nullptr);
 
     bool userInPrivateChat(int uid, int chat_id);
     bool addUserInPrivateChat(int uid, int chat_id);

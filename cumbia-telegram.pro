@@ -67,7 +67,8 @@ SOURCES += \
     src/modules/moduleutils.cpp \
     src/modules/botmonitor_mod_msgformatter.cpp \
     src/modules/host_mod.cpp \
-    src/modules/help_mod.cpp
+    src/modules/help_mod.cpp \
+    src/cubotmsgtracker.cpp
 
 HEADERS += \
     src/cubotserver.h \
@@ -88,7 +89,8 @@ HEADERS += \
     src/modules/host_mod.h \
     \
     src/lib/cumbia-telegram-defs.h \
-    src/modules/help_mod.h
+    src/modules/help_mod.h \
+    src/cubotmsgtracker.h
 
 RESOURCES += \
     cumbia-telegram.qrc
@@ -96,10 +98,10 @@ RESOURCES += \
 DISTFILES += \
     res/help.html \
     res/help_monitor.html \
-    res/help_alerts.html \
     res/help_search.html \
     res/help_host.html \
-    CumbiaBot_elettra_token.txt
+    CumbiaBot_elettra_token.txt \
+    res/help_alias.html
 
 
 message ("install root $${INSTALL_ROOT}")

@@ -13,6 +13,11 @@
 #include <cumacros.h>
 #include <unistd.h>
 #include <QEventLoop>
+#include <tbotmsg.h>
+#include <QJsonDocument>
+#include <QJsonParseError>
+#include <QJsonArray>
+#include <QJsonValue>
 
 #define TELEGRAM_MAX_MSGLEN 4096
 
@@ -21,6 +26,7 @@ public:
     QString key;
     QNetworkAccessManager *manager;
     QNetworkRequest netreq;
+    QString msg;
 };
 
 CuBotSender::CuBotSender(QObject *parent, const QString& bot_tok) : QObject(parent)
@@ -32,21 +38,36 @@ CuBotSender::CuBotSender(QObject *parent, const QString& bot_tok) : QObject(pare
     d->key = bot_tok;
 }
 
-void CuBotSender::sendMessage(int chat_id, const QString &msg, bool silent, bool wait_for_reply)
+void CuBotSender::sendMessage(int chat_id, const QString &msg, bool silent, bool wait_for_reply, int key)
 {
-    QString u = QString("https://api.telegram.org/%1/sendMessage").arg(d->key);
     QUrlQuery params;
+    if(silent)
+        params.addQueryItem("disable_notification", "true");
+    printf("FUCKIN SEND MESSAGE CuBotSender;;sendMessaeg to %d %s\n", chat_id, qstoc(msg));
+    m_do_sendMsg(chat_id, key, "sendMessage", msg, params, wait_for_reply);
+}
+
+void CuBotSender::editMessage(int chat_id, int key, const QString &msg, int msg_id, bool wait_for_reply)
+{
+    QUrlQuery params;
+    params.addQueryItem("message_id", QString::number(msg_id));
+    printf("\e[1;32mCuBotSender::editMessage: editMessageRequest! chat %d key %d message_id %d\e[0m\n", chat_id, key, msg_id);
+    m_do_sendMsg(chat_id, key, "editMessageText", msg, params, wait_for_reply);
+}
+
+void CuBotSender::m_do_sendMsg(int chat_id, int key, const QString& method,
+                               const QString &msg, QUrlQuery &params,
+                               bool wait_for_reply)
+{
+    QString u = QString("https://api.telegram.org/%1/%2").arg(d->key).arg(method);
     params.addQueryItem("chat_id", QString::number(chat_id));
     params.addQueryItem("parse_mode", "HTML");
-    params.addQueryItem("text", msg);
     if(msg.length() > TELEGRAM_MAX_MSGLEN) {
-         params.addQueryItem("text", m_truncateMsg(msg));
+        params.addQueryItem("text", m_truncateMsg(msg));
     }
     else {
         params.addQueryItem("text", msg);
     }
-    if(silent)
-        params.addQueryItem("disable_notification", "true");
 
     // disable link preview (currently only help would contain links)
     params.addQueryItem("disable_web_page_preview", "true");
@@ -56,6 +77,7 @@ void CuBotSender::sendMessage(int chat_id, const QString &msg, bool silent, bool
     d->netreq.setUrl(url);
 
     QNetworkReply *reply = d->manager->get(d->netreq);
+    reply->setProperty("key", key);
     if(wait_for_reply) {
         QEventLoop loop;
         QObject::connect(reply, SIGNAL(readyRead()), &loop, SLOT(quit()));
@@ -102,7 +124,11 @@ void CuBotSender::onNetworkError(QNetworkReply::NetworkError nerr)
 void CuBotSender::onReply()
 {
     QNetworkReply *reply = qobject_cast<QNetworkReply *>(sender());
-//    printf("CuBotSender.onReply: \e[1;32mgot %s\e[0m going to delete reply later\n", qstoc(QString(reply->readAll())));
+    const QByteArray ba = reply->readAll();
+    int mid, chat_id;
+    m_getIds(ba, chat_id, mid);
+    printf("\e[1;32mCuBotSender:onReply: message_id %d got from \e[0m%s KEY %d\n", mid, ba.data(), reply->property("key").toInt());
+    emit messageSent(chat_id, mid, reply->property("key").toInt());
     reply->deleteLater();
 }
 
@@ -115,3 +141,26 @@ QString CuBotSender::m_truncateMsg(const QString &in)
     trunc.remove("<b>").remove("</b>").remove("<i>").remove("</i>");
     return trunc + suffix;
 }
+
+void CuBotSender::m_getIds(const QByteArray &ba, int& chat_id, int& message_id) const
+{
+    d->msg.clear();
+    QJsonParseError pe;
+    QJsonDocument jdoc = QJsonDocument::fromJson(ba, &pe);
+    bool decode_err = (pe.error != QJsonParseError::NoError);
+    if(decode_err)
+        d->msg = "CuBotSender::m_getId: " + pe.errorString() + ": offset: " + QString::number(pe.offset);
+    else {
+        const QJsonValue& result = jdoc["result"];
+        if(!result.isNull()) {
+            const QJsonValue &jmsg_id = result["message_id"];
+            const QJsonValue &jchat = result["chat"];
+            const QJsonValue &jchat_id = jchat["id"];
+            if(jmsg_id.isDouble() && jchat_id.isDouble()) {
+                message_id = jmsg_id.toInt();
+                chat_id = jchat_id.toInt();
+            }
+        }
+    }
+}
+

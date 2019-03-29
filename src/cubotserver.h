@@ -33,6 +33,8 @@ signals:
 private slots:
     void onMessageReceived(const TBotMsg &m);
 
+    void onMessageSent(int chat_id, int message_id, int key );
+
     void onReaderUpdate(int chat_id, const CuData& d);
 
     // control server data
@@ -73,12 +75,14 @@ private:
     // CuBotModuleListener interface
 public:
     void onSendMessageRequest(int chat_id, const QString &msg, bool silent, bool wait_for_reply);
+    void onEditMessageRequest(int chat_id, int key, const QString &msg, bool wait_for_reply);
     void onStatsUpdateRequest(int chat_id, const CuData& data);
     void onSendPictureRequest(int chat_id, const QByteArray &pic_ba);
 
     // CuBotModuleListener interface
 public:
     void onReinjectMessage(const TBotMsg &msg_mod);
+
 };
 
 #endif // CUBOTSERVER_H

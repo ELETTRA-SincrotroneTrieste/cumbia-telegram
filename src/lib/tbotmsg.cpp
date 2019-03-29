@@ -140,5 +140,6 @@ QString TBotMsg::m_stripDescription(QString &text)
         text = text.remove(ma.captured(0)).trimmed();
         return ma.captured(1).trimmed();
     }
+    text = text.trimmed();
     return QString();
 }

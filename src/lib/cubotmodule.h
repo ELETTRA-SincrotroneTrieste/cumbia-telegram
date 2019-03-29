@@ -20,6 +20,12 @@ public:
                                       const QString& msg,
                                       bool silent = false,
                                       bool wait_for_reply = false) = 0;
+
+    virtual void onEditMessageRequest(int chat_id,
+                                        int key,
+                                        const QString& msg,
+                                        bool wait_for_reply = false) = 0;
+
     virtual void onSendPictureRequest(int chat_id, const QByteArray &pic_ba) = 0;
     virtual void onReinjectMessage(const TBotMsg& msg_mod) = 0;
     virtual void onStatsUpdateRequest(int chat_id, const CuData& data) = 0;

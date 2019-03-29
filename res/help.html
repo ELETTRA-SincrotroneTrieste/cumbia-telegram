@@ -11,8 +11,8 @@ Send the name of the source you want to read, followed by an optional formula:
 
 <b>Monitor</b>
 
-Monitor a source. If no formula is specified, a <i>silent</i> notification is sent when the value changes.
-A <i>silent</i> notification is sent when the formula evaluation result is true otherwise.
+Monitor a source. With no formula, a <i>silent</i> notification is sent when the value changes.
+On the other hand, a <i>silent</i> notification is sent when the formula evaluation result is true.
 
   <i>monitor test/device/1/long_scalar</i>
   <i>monitor test/device/1/double_scalar > 200.0</i>
@@ -30,8 +30,8 @@ In the second, one alert is sent when the value becomes <i>greater than 200.0</i
 
 What is the <i>difference</i> between an <i>alert</i> and a <i>monitor</i> configured with the <i>same formula</i>?
 
-- a monitor sends a lower priority notification (requires a <i>silent</i> message)
-- a monitor sends a message when the <i>formula evaluates to true</i>, an alert whenever a <i>formula evaluation changes</i>.
+- a monitor sends a lower priority notification (a message <i>with no alert sound</i>)
+- a monitor sends a message when the <i>formula evaluates to true</i>, an alert when the <i>formula evaluation changes</i>.
 
 What is the <i>difference</i> between an <i>alert</i> and a <i>monitor</i> when <i>no formula</i> is provided?
 An <i>alert</i> is issued each time the <i>quality</i> of the reading changes, a monitor sends a (silent) message
@@ -39,29 +39,30 @@ on every variation of the value.
 
 <b>Stop monitors</b>
 
-The command <i>stop source_name</i> halts the monitor of <i>source_name</i>.
+The command <i>stop src-pattern</i> halts the monitor(s) whose sources match the given pattern.
 The <i>stop</i> instruction <i>alone</i> halts <i>all</i> the running monitors.
-Monitors can be interrupted from any message of theirs or through the lists provided either by /monitors or /alerts.
+Additionally, monitors can be interrupted from any of their messages or through the lists provided either by /monitors or /alerts commands.
 
-<b>Further notes on monitors and alerts</b>
+<b>Monitor and alert description</b>
 
-Subsequent <i>monitor</i> or <i>alert</i> commands with the <i>same source</i> can only alter a running monitor by changing its type (<i>alert</i> or <i>monitor</i>) or formula. It is not possible to run multiple monitors connected to the same source.
+Any comment starting with <i>//</i> <i>after the monitor command</i> is used as a title (description) for the command. It will be quoted at the beginning of monitor and alert result messages.
+Titles can help identify the source of the result.
+
+The <i>/help_monitor</i> page provides further details.
 
 <b>History</b>
 
-Some special commands display or run over again operations successfully accomplished in the past:
+Some special commands display or run operations successfully accomplished in the past overa again:
 
-- /last execute again last successful operation
+- /last executes last successful operation
 
-  An additional message with the operation name and its last execution time will precede the result.
-
-- /reads displays <i>read</i> history and offers short links to repeat the action
+- /reads displays <i>read</i> history and offers short links to repeat actions
 
 - /monitors displays active and expired <i>monitors</i>. The latter can be <i>restarted</i>, the former <i>stopped</i>.
 
-- /alerts displays active and expired <i>alerts</i>. The latter can be <i>restarted</i>, the former <i>stopped</i>.
+- /alerts displays active and expired <i>alerts</i>. They can be either <i>restarted</i> or <i>stopped</i>.
 
-Older entries are deleted. The history size for each section is decided by the administrator.
+Older entries are deleted. The history size is decided by the administrator.
 
 <b>Bookmarks</b>
 
@@ -81,4 +82,3 @@ The <i>search</i> command allows to query the <i>Tango database</i> and look for
 
 - <i>mail</i> giacomo.strangolino@elettra.eu
 - <i>cumbia</i> documentation  https://elettra-sincrotronetrieste.github.io/cumbia-libs/
-- <i>cumbia download</i> https://github.com/ELETTRA-SincrotroneTrieste/cumbia-libs

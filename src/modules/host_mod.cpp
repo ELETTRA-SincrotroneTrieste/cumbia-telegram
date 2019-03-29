@@ -29,7 +29,7 @@ int HostMod::type() const
 
 QString HostMod::name() const
 {
-    return "Host";
+    return "host";
 }
 
 QString HostMod::description() const
