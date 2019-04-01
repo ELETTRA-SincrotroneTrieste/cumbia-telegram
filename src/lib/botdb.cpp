@@ -364,10 +364,10 @@ int BotDb::fixStaleItems(const QStringList &cmd_list)
         if(!cmd_list.contains(cmd))
             m_err = !q2.exec(QString("UPDATE history SET stop_timestamp=datetime() WHERE command='%1' AND h_idx=%2 ")
                              .arg(cmd).arg(q.value(1).toInt()));
-        if(q.numRowsAffected() > 0) {
+        if(q2.numRowsAffected() > 0) {
             printf("\e[1;31mBotDb.fixStaleItem\e[0m: fixing \e[1;31mstale cmd \"%s\"\e[0m a valid stop date was missing",
                    qstoc(cmd));
-            cnt += q.numRowsAffected();
+            cnt += q2.numRowsAffected();
         }
     }
 

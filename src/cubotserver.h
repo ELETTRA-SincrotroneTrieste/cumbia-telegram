@@ -35,8 +35,6 @@ private slots:
 
     void onMessageSent(int chat_id, int message_id, int key );
 
-    void onReaderUpdate(int chat_id, const CuData& d);
-
     // control server data
     void onNewControlServerData(int uid, int chat_id, ControlMsg::Type t, const QString& msg, QLocalSocket *so);
 
@@ -51,15 +49,13 @@ private:
     void disposeCumbia();
 
     void m_loadModules();
-
+    bool m_registerModule(CuBotModule *mod);
     void m_loadPlugins();
-
     void m_unloadAll();
 
     void m_setupMonitor();
 
     bool m_saveProcs();
-
     bool m_restoreProcs();
 
     bool m_broadcastShutdown();
@@ -67,8 +63,6 @@ private:
     void m_removeExpiredProcs(QList<HistoryEntry> &in);
 
     bool m_isBigSizeVector(const CuData &da) const;
-
-    bool m_registerModule(CuBotModule *mod);
 
     QString m_unauthorized_msg(const QString &username, const QString &op_type, const QString &reason) const;
 

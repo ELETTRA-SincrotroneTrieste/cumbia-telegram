@@ -11,7 +11,6 @@ public:
 
     bool isValid() const;
 
-    int last_msg_id;
     QMap<int, int> key_id_map;
 };
 
@@ -20,20 +19,18 @@ class CuBotMsgTrackerPrivate;
 class CuBotMsgTracker
 {
 public:
-    CuBotMsgTracker(int track_depth);
+    CuBotMsgTracker();
 
     ~CuBotMsgTracker();
 
-    void addMsg(int chat_id, int msg_id);
+    void addMsg(int chat_id, int msg_id, int key, int depth);
 
-    void addMsg(int chat_id, int msg_id, int key);
-
-    int getMessageId(int chat_id, int key);
+    int getMessageId(int chat_id, int key, int depth);
 
 private:
     CuBotMsgTrackerPrivate *d;
 
-    int m_removeOld(QMap<int, int> &map, int msg_id);
+    int m_removeOld(QMap<int, int> &map, int msg_id, int depth);
 };
 
 #endif // CUBOTMSGTRACKER_H

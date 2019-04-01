@@ -125,6 +125,16 @@ QList<BotReader *> BotMonitor::readers() const
     return d->readersMap.values();
 }
 
+QList<BotReader *> BotMonitor::readers(int chat_id) const
+{
+    return  d->readersMap.values(chat_id);
+}
+
+int BotMonitor::readersCount(int chat_id) const
+{
+    return d->readersMap.count(chat_id);
+}
+
 void BotMonitor::setMaxAveragePollingPeriod(int millis)
 {
     d->max_avg_poll_period = millis;
@@ -327,7 +337,6 @@ void BotMonitor::onNewMonitorData(int chat_id, const CuData &da, int reader_idx)
     const QString m = mf.fromData_msg(da, DataMsgFormatter::FormatShort, d->src_description);
     if(silent) {
         lis->onEditMessageRequest(chat_id, reader_idx, m);
-        printf("\e[1;33mBotMonitor::onNewMonitorData: chat_id %d requesting edit index %d\e[0m\n", chat_id, reader_idx);
     }
     else
         lis->onSendMessageRequest(chat_id, m, silent);

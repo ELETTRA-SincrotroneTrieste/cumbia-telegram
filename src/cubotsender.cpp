@@ -43,7 +43,6 @@ void CuBotSender::sendMessage(int chat_id, const QString &msg, bool silent, bool
     QUrlQuery params;
     if(silent)
         params.addQueryItem("disable_notification", "true");
-    printf("FUCKIN SEND MESSAGE CuBotSender;;sendMessaeg to %d %s\n", chat_id, qstoc(msg));
     m_do_sendMsg(chat_id, key, "sendMessage", msg, params, wait_for_reply);
 }
 
@@ -51,7 +50,6 @@ void CuBotSender::editMessage(int chat_id, int key, const QString &msg, int msg_
 {
     QUrlQuery params;
     params.addQueryItem("message_id", QString::number(msg_id));
-    printf("\e[1;32mCuBotSender::editMessage: editMessageRequest! chat %d key %d message_id %d\e[0m\n", chat_id, key, msg_id);
     m_do_sendMsg(chat_id, key, "editMessageText", msg, params, wait_for_reply);
 }
 
@@ -127,7 +125,6 @@ void CuBotSender::onReply()
     const QByteArray ba = reply->readAll();
     int mid, chat_id;
     m_getIds(ba, chat_id, mid);
-    printf("\e[1;32mCuBotSender:onReply: message_id %d got from \e[0m%s KEY %d\n", mid, ba.data(), reply->property("key").toInt());
     emit messageSent(chat_id, mid, reply->property("key").toInt());
     reply->deleteLater();
 }

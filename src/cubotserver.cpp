@@ -164,14 +164,8 @@ void CuBotServer::onMessageReceived(const TBotMsg &m)
 
 void CuBotServer::onMessageSent(int chat_id, int message_id, int key)
 {
-    printf("\e[1;32mCuBotServer:onMessageSent: chat_id %d message_id %d key %d\e[0m\n",
-           chat_id, message_id, key);
-    key > -1 ? d->msg_tracker->addMsg(chat_id, message_id, key) : d->msg_tracker->addMsg(chat_id, message_id);
-}
-
-void CuBotServer::onReaderUpdate(int chat_id, const CuData &data)
-{
-    // moved to botreader_mod
+    int rcnt = d->bot_mon->readersCount(chat_id);
+    d->msg_tracker->addMsg(chat_id, message_id, key, rcnt);
 }
 
 void CuBotServer::start()
@@ -204,7 +198,7 @@ void CuBotServer::start()
         connect(d->control_server, SIGNAL(newMessage(int, int, ControlMsg::Type, QString, QLocalSocket*)),
                 this, SLOT(onNewControlServerData(int, int, ControlMsg::Type, QString, QLocalSocket*)));
 
-        d->msg_tracker = new CuBotMsgTracker(4);
+        d->msg_tracker = new CuBotMsgTracker();
 
         if(!d->stats)
             d->stats = new BotStats(this);
@@ -462,15 +456,12 @@ void CuBotServer::onSendMessageRequest(int chat_id, const QString &msg, bool sil
 
 void CuBotServer::onEditMessageRequest(int chat_id, int key, const QString &msg, bool wait_for_reply)
 {
-    int message_id = d->msg_tracker->getMessageId(chat_id, key); // key is reader idx in database
+    int message_id = d->msg_tracker->getMessageId(chat_id, key, d->bot_mon->readersCount(chat_id)); // key is reader idx in database
     if(message_id < 0) {
-        printf("CuBotServer::onEditMessageRequest: \e[1;31mfalling back to new message for chat_id %d key %d msg %s\e[0m\e[0m\n",
-               chat_id, key, qstoc(msg));
         CuBotServerSendMsgEvent *sendMsgEvent = new CuBotServerSendMsgEvent(chat_id, msg, true, wait_for_reply, key);
         qApp->postEvent(this, sendMsgEvent);
     }
     else {
-        printf("\e[1;33mCuBotServer.onEditMessageRequest: chat_id %d msg_id %d KEY %d\e[0m\n", chat_id, message_id, key);
         CuBotServerEditMsgEvent *editMsgE = new CuBotServerEditMsgEvent(chat_id, msg, key, message_id, wait_for_reply);
         qApp->postEvent(this, editMsgE);
     }

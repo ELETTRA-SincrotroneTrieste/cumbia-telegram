@@ -37,6 +37,10 @@ public:
 
     QList<BotReader *>  readers() const;
 
+    QList<BotReader *> readers(int chat_id) const;
+
+    int readersCount(int chat_id) const;
+
     void setMaxAveragePollingPeriod(int millis);
 
     int maxAveragePollingPeriod() const;
