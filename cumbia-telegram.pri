@@ -3,7 +3,9 @@
 #
 #                                                         customization section start
 #
-INSTALL_ROOT = /tmp/cumbia-telegram
+
+INSTALL_ROOT = /usr/local/cumbia-telegram
+CUMBIA_QTCONTROLS_ROOT=/usr/local/cumbia-libs
 #
 SHAREDIR = $${INSTALL_ROOT}/share
 DOCDIR = $${SHAREDIR}/doc
@@ -11,6 +13,7 @@ DOCDIR = $${SHAREDIR}/doc
 # where to look for telegram plugins
 CUMBIA_TELEGRAM_PLUGIN_PATH=$${INSTALL_ROOT}/lib/plugins
 DEFINES += CUMBIA_TELEGRAM_PLUGIN_DIR=\"\\\"$${CUMBIA_TELEGRAM_PLUGIN_PATH}\\\"\"
+
 
 # Qwt is used to generate plot images
 # If QWT_HOME is left empty, qwt configuration is taken from pkg-config
@@ -21,26 +24,11 @@ DEFINES += CUMBIA_TELEGRAM_PLUGIN_DIR=\"\\\"$${CUMBIA_TELEGRAM_PLUGIN_PATH}\\\"\
 #
 QWT_HOME=
 
-# DEPENDENCIES
-
-# cumbia plugin directory.
-# Please check your cumbia installation and modify
-# CU_QTC_PLUGINDIR accordingly
-#
-CU_QTC_PLUGINDIR = $${INSTALL_ROOT}/lib/qumbia-plugins
-#
-#
-#
-DEFINES += CUMBIA_QTCONTROLS_PLUGIN_DIR=\"\\\"$${CU_QTC_PLUGINDIR}\\\"\"
-#
-#                                                        customization section end
-#
-#                              ###################################################################
-#
 
 MOC_DIR = moc
 OBJECTS_DIR = obj
 
+# DEPENDENCIES
 #
 # struggle to find Qwt somewhere.
 # Hope to find pkgconfig.
@@ -95,13 +83,33 @@ packagesExist(cumbia-tango) {
 }
 packagesExist(qumbia-tango-controls) {
         PKGCONFIG += qumbia-tango-controls
+        DEFINES += HAS_QUMBIA_TANGO_CONTROLS=1
+        message("tango support enabled")
+}
+  #
+## epics support?
+packagesExist(epics-base) {
+    PKGCONFIG += epics-base
+}
+else {
+    message("package epics-base not found")
+}
+packagesExist(epics-base-linux-x86_64) {
+    PKGCONFIG += epics-base-linux-x86_64
+}
+else {
+    message("package epics-base-linux-x86_64 not found")
 }
 
-## epics support?
 packagesExist(cumbia-epics) {
         PKGCONFIG += cumbia-epics
 }
-packagesExist(qumbia-epics-controls) {
+packagesExist(cumbia-epics,epics-base,qumbia-epics-controls) {
         PKGCONFIG += qumbia-epics-controls
+        DEFINES += HAS_QUMBIA_EPICS_CONTROLS=1
+        message("epics support enabled")
+}
+else {
+    message("epics support disabled")
 }
 

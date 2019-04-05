@@ -39,7 +39,7 @@
 #include <cupluginloader.h>
 #include "cubotserverevents.h"
 
-#ifdef QUMBIA_EPICS_CONTROLS
+#ifdef HAS_QUMBIA_EPICS_CONTROLS
 #include <cumbiaepics.h>
 #include <cuepcontrolsreader.h>
 #include <cuepcontrolswriter.h>

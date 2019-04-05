@@ -1,13 +1,16 @@
 #include "cumbiasupervisor.h"
 #include <cumbiapool.h>
-#include <cumbiatango.h>
-#include <cutango-world.h>
 #include <cuthreadfactoryimpl.h>
 #include <qthreadseventbridgefactory.h>
+
+#ifdef HAS_QUMBIA_TANGO_CONTROLS // set by cumbia-telegram.pri
+#include <cumbiatango.h>
+#include <cutango-world.h>
 #include <cutcontrolsreader.h>
 #include <cutcontrolswriter.h>
+#endif
 
-#ifdef QUMBIA_EPICS_CONTROLS
+#ifdef HAS_QUMBIA_EPICS_CONTROLS // set by cumbia-telegram.pri
 #include <cumbiaepics.h>
 #include <cuepcontrolsreader.h>
 #include <cuepcontrolswriter.h>
@@ -52,7 +55,7 @@ void CumbiaSupervisor::setup()
         tg_patterns.push_back(h_a_p.toStdString());
         tg_patterns.push_back(a_p.toStdString());
 
-#ifdef QUMBIA_TANGO_CONTROLS_VERSION
+#ifdef HAS_QUMBIA_TANGO_CONTROLS
         CumbiaTango* cuta = new CumbiaTango(new CuThreadFactoryImpl(), new QThreadsEventBridgeFactory());
         cu_pool->registerCumbiaImpl("tango", cuta);
         ctrl_factory_pool.registerImpl("tango", CuTWriterFactory());  // register Tango writer implementation
@@ -61,7 +64,7 @@ void CumbiaSupervisor::setup()
         cu_pool->setSrcPatterns("tango", tg_patterns);
 #endif
 
-#ifdef QUMBIA_EPICS_CONTROLS
+#ifdef HAS_QUMBIA_EPICS_CONTROLS
         // do not allow host:20000/sys/tg_test/1/double_scalar
         // force at least one letter after ":"
         std::string ep_pattern = std::string("[A-Za-z0-9_]+:[A-Za-z_]+[A-Za-z_0-9]*");
@@ -79,7 +82,9 @@ void CumbiaSupervisor::setup()
         // formulas
 
         CuPluginLoader plulo;
-        QString plupath = plulo.getPluginAbsoluteFilePath(CUMBIA_QTCONTROLS_PLUGIN_DIR, "cuformula-plugin.so");
+        // empty default path: CuPluginLoader will use CUMBIA_QTCONTROLS_PLUGIN_DIR
+        // defined in cumbia-qtcontrols.pri
+        QString plupath = plulo.getPluginAbsoluteFilePath(QString(), "cuformula-plugin.so");
         QPluginLoader pluginLoader(plupath);
         QObject *plugin = pluginLoader.instance();
         if (plugin){

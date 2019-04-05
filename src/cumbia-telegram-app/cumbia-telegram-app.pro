@@ -11,7 +11,7 @@ CONFIG+=link_pkgconfig
 
 CONFIG += debug
 
-TARGET = bin/cumbia-telegram
+TARGET = ../../bin/cumbia-telegram
 
 PKGCONFIG += tango
 PKGCONFIG += x11
