@@ -38,6 +38,9 @@ DEFINES += CUMBIA_QTCONTROLS_PLUGIN_DIR=\"\\\"$${CU_QTC_PLUGINDIR}\\\"\"
 #                              ###################################################################
 #
 
+MOC_DIR = moc
+OBJECTS_DIR = obj
+
 #
 # struggle to find Qwt somewhere.
 # Hope to find pkgconfig.
