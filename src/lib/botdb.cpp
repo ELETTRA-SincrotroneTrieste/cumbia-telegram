@@ -499,6 +499,26 @@ HistoryEntry BotDb::commandFromIndex(int uid, const QString& type, int index)
     return HistoryEntry();
 }
 
+HistoryEntry BotDb::historyEntryFromCmd(int uid, const QString &command)
+{
+    HistoryEntry he;
+    if(!m_db.isOpen())
+        return he;
+    m_msg.clear();
+    QSqlQuery q(m_db);
+    m_err = !q.exec(QString("SELECT h_idx,timestamp,type,host,description FROM history WHERE command='%1' AND user_id=%2")
+                    .arg(command).arg(uid));
+    while(!m_err && q.next()) {
+        he = HistoryEntry(q.value(0).toInt(), uid, q.value(1).toDateTime(), command,
+                          q.value(2).toString(), q.value(3).toString(), q.value(4).toString());
+    }
+    if(m_err) {
+        m_setErrorMessage("historyEntryFromCmd", q);
+        perr("%s", qstoc(m_msg));
+    }
+    return he;
+}
+
 bool BotDb::monitorStopped(int user_id, const QString &command, const QString &host)
 {
     if(!m_db.isOpen())

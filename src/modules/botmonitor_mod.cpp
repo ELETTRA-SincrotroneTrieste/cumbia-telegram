@@ -243,6 +243,7 @@ bool BotMonitor::startRequest(int user_id,
                                               d->cu_pool, d->ctrl_factory_pool,
                                               d->ttl, d->poll_period, cmd, priority, host, monitor);
             connect(reader, SIGNAL(newData(int, const CuData&)), this, SLOT(m_onNewData(int, const CuData&)));
+            connect(reader, SIGNAL(newDataIn(int, const CuData&)), this, SLOT(m_updateStats(int, const CuData&)));
             connect(reader, SIGNAL(formulaChanged(int, int, QString,QString, QString,QString)),
                     this, SLOT(m_onFormulaChanged(int, int, QString,QString, QString,QString)));
             connect(reader, SIGNAL(startSuccess(int, int, QString, QString,QString)),
@@ -340,7 +341,12 @@ void BotMonitor::onNewMonitorData(int chat_id, const CuData &da, int reader_idx)
     }
     else
         lis->onSendMessageRequest(chat_id, m, silent);
-    lis->onStatsUpdateRequest(chat_id, da);
+
+}
+
+void BotMonitor::m_updateStats(int chat_id, const CuData &da)
+{
+    getModuleListener()->onStatsUpdateRequest(chat_id, da);
 }
 
 void BotMonitor::onSrcMonitorStopped(int user_id, int chat_id, const QString &src,
@@ -352,7 +358,8 @@ void BotMonitor::onSrcMonitorStopped(int user_id, int chat_id, const QString &sr
     BotmonitorMsgFormatter monf;
     BotConfig *conf = getBotConfig();
     mh.adjustPollers(this, conf->poll_period(), conf->max_avg_poll_period());
-    getModuleListener()->onSendMessageRequest(chat_id,  monf.monitorStopped(command, message), silent);
+    HistoryEntry he = getDb()->historyEntryFromCmd(user_id, command);
+    getModuleListener()->onSendMessageRequest(chat_id,  monf.monitorStopped(he, message), silent);
     // update database, remove rows for chat_id and src
     getDb()->monitorStopped(user_id, command, host);
 }

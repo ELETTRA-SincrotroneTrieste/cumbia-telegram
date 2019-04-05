@@ -4,6 +4,10 @@ include(/usr/local/cumbia-libs/include/cumbia-qtcontrols/cumbia-qtcontrols.pri)
 
 INSTALL_ROOT = /usr/local/cumbia-telegram
 
+SHAREDIR = $${INSTALL_ROOT}/share
+
+DOCDIR = $${SHAREDIR}/doc
+
 CUMBIA_TELEGRAM_PLUGIN_PATH=$${INSTALL_ROOT}/lib/plugins
 
 DEFINES += CUMBIA_TELEGRAM_PLUGIN_DIR=\"\\\"$${CUMBIA_TELEGRAM_PLUGIN_PATH}\\\"\" \
@@ -90,7 +94,8 @@ HEADERS += \
     \
     src/lib/cumbia-telegram-defs.h \
     src/modules/help_mod.h \
-    src/cubotmsgtracker.h
+    src/cubotmsgtracker.h \
+    src/cumbia-telegram-doc.h
 
 RESOURCES += \
     cumbia-telegram.qrc
@@ -109,6 +114,16 @@ message ("install root $${INSTALL_ROOT}")
 inst.files = $${TARGET}
 inst.path = $${INSTALL_ROOT}/bin
 
+doc.commands = \
+doxygen \
+Doxyfile;
+
+doc.files = doc/*
+doc.path = $${DOCDIR}
+
+QMAKE_EXTRA_TARGETS += doc
+
+
 LIBS += -L$${INSTALL_ROOT}/lib -lcumbia-telegram
 
-INSTALLS += inst
+INSTALLS += inst doc

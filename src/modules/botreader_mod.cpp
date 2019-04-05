@@ -61,7 +61,6 @@ void BotReaderModule::onReaderUpdate(int chat_id, const CuData &data)
     bool err = data["err"].toBool();
     DataMsgFormatter mf;
     CuBotModuleListener *mlis = getModuleListener();
-    mlis->onStatsUpdateRequest(chat_id, data); // data is passed for error stats, QString() provides empty description
     mlis->onSendMessageRequest(chat_id, mf.fromData_msg(data, DataMsgFormatter::FormatShort, QString()));
     if(!err && m_isBigSizeVector(data)) {
         BotPlotGenerator *plotgen = new BotPlotGenerator(chat_id, data);
@@ -73,6 +72,11 @@ void BotReaderModule::onReaderUpdate(int chat_id, const CuData &data)
         HistoryEntry he(reader->userId(), reader->command(), "read", reader->getAppliedHost(), QString());
         getDb()->addToHistory(he);
     }
+}
+
+void BotReaderModule::m_updateStats(int chat_id, const CuData &dat)
+{
+    getModuleListener()->onStatsUpdateRequest(chat_id, dat);
 }
 
 int BotReaderModule::type() const {
@@ -124,6 +128,7 @@ bool BotReaderModule::process()
         BotReader *r = new BotReader(d->user_id, d->chat_id, this, d->cu_s.cu_pool,
                                      d->cu_s.ctrl_factory_pool, bcfg->ttl(),
                                      bcfg->poll_period(), d->msg_text, BotReader::High, host);
+        connect(r, SIGNAL(newDataIn(int, const CuData&)), this, SLOT(m_updateStats(int, const CuData& )));
         connect(r, SIGNAL(newData(int, const CuData&)), this, SLOT(onReaderUpdate(int, const CuData& )));
         r->setPropertiesOnly(true); // only configure! no reads!
         r->setSource(src); // insert in  history db only upon successful connection

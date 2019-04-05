@@ -78,6 +78,8 @@ private:
 private slots:
     void m_onNewData(int, const CuData&);
 
+    void m_updateStats(int chat_id, const CuData &da);
+
     void m_onFormulaChanged(int user_id, int chat_id, const QString &src, const QString &old, const QString &new_f, const QString& host);
 
     int m_onPriorityChanged(int user_id, int chat_id,

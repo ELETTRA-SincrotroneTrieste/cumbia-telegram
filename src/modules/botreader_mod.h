@@ -34,6 +34,7 @@ public:
 
 private slots:
     void onReaderUpdate(int chat_id, const CuData& data);
+    void m_updateStats(int chat_id, const CuData& dat);
 
 private:
     BotReaderModulePrivate *d;

@@ -441,6 +441,9 @@ void BotReader::m_configure(const CuData& da)
 void BotReader::onUpdate(const CuData &da)
 {
     d->read_ok = !da["err"].toBool();
+    // can be used for statistics
+    emit newDataIn(d->chat_id, da);
+
     if(d->read_ok && d->refresh_cnt == 0) {
         m_check_or_setStartedNow(); // read method comments
         emit startSuccess(d->user_id, d->chat_id, source(), d->command, getAppliedHost());

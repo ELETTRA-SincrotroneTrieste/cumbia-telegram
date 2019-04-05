@@ -148,6 +148,9 @@ public slots:
     void setFormula(const QString& command);
 
 signals:
+    // for statistics purposes, emitted _before_ processing from onUpdate
+    void newDataIn(int chat_id, const CuData&);
+    // emitted after new data is processed and an update is required
     void newData(int chat_id, const CuData&);
     void lastUpdate(int chat_id, const CuData&);
     void startSuccess(int user_id, int chat_it, const QString& src, const QString& formula, const QString& host);

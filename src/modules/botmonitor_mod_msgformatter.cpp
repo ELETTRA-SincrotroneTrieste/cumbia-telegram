@@ -41,11 +41,11 @@ QString BotmonitorMsgFormatter::monitorUntil(const QString &src, const QDateTime
     return QString("🕐   started monitoring <i>%1</i> until <i>%2</i>").arg(m).arg(DataMsgFormatter().timeRepr(until));
 }
 
-QString BotmonitorMsgFormatter::monitorStopped(const QString &cmd, const QString &msg) const
+QString BotmonitorMsgFormatter::monitorStopped(const HistoryEntry& he, const QString &msg) const
 {
     FormulaHelper fh;
-    QString m = fh.escape(cmd);
-    return "⏹   stopped monitoring <i>" + m + "</i>: <i>" + fh.escape(msg) + "</i>";
+    return QString("⏹   stopped monitoring <i>%1</i>: <i>%2</i>   [restart /%3%4]")
+            .arg(fh.escape(he.command)).arg(fh.escape(msg)).arg(he.type).arg(he.index);
 }
 
 QString BotmonitorMsgFormatter::alreadyMonitoring(const QString &src, const QString &host) const

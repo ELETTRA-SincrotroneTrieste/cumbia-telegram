@@ -48,6 +48,8 @@ public:
 
     HistoryEntry commandFromIndex(int uid, const QString &type, int index);
 
+    HistoryEntry historyEntryFromCmd(int uid, const QString& command);
+
     bool monitorStopped(int user_id, const QString& command, const QString& host);
 
     bool error() const;

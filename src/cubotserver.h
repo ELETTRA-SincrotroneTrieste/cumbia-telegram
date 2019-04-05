@@ -1,6 +1,8 @@
 #ifndef CUBOTSERVER_H
 #define CUBOTSERVER_H
 
+
+
 #include <QObject>
 #include "lib/tbotmsg.h"
 #include <tbotmsgdecoder.h>
