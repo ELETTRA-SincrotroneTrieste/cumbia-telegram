@@ -7,17 +7,14 @@
 #include <cuformulaparsehelper.h>
 #include <tsource.h>
 #include <cuformulaparsehelper.h>
-#include <QContextMenuEvent>
 #include <QMetaProperty>
 #include <QScriptEngine>
 #include <QRegularExpression>
+#include <QDateTime>
 #include <QtDebug>
-
 
 #include "cucontrolsfactories_i.h"
 #include "cucontrolsfactorypool.h"
-#include "culinkstats.h"
-#include "cucontextmenu.h"
 #include "cucontext.h"
 #include "formulahelper.h"
 #include "botreadquality.h"

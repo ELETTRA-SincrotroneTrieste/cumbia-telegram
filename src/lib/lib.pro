@@ -1,9 +1,4 @@
-include(/usr/local/cumbia-libs/include/qumbia-tango-controls/qumbia-tango-controls.pri)
-include(/usr/local/cumbia-libs/include/qumbia-epics-controls/qumbia-epics-controls.pri)
-include(/usr/local/cumbia-libs/include/cumbia-qtcontrols/cumbia-qtcontrols.pri)
-
-INSTALL_ROOT = /usr/local/cumbia-telegram
-
+include(../../cumbia-telegram.pri)
 
 # for qwt!
 QT += gui
@@ -28,14 +23,6 @@ VER_MIN = 0
 VER_PAT = 0
 
 TARGET = cumbia-telegram
-
-packagesExist(cumbia) {
-    PKGCONFIG += cumbia
-}
-
-packagesExist(cumbia-tango) {
-    PKGCONFIG += cumbia-tango
-}
 
 # The following define makes your compiler emit warnings if you use
 # any Qt feature that has been marked deprecated (the exact warnings
@@ -94,10 +81,21 @@ HEADERS += \
 
 inc.files = $${HEADERS}
 
+INCLUDEPATH += $${QWT_INCLUDES} \
+$${QWT_INCLUDES_USR}
+
 message ("install root $${INSTALL_ROOT}")
+doc.commands = \
+doxygen \
+Doxyfile;
+
+doc.files = doc/*
+
+QMAKE_EXTRA_TARGETS += doc
+
 
 inc.path = $${INSTALL_ROOT}/include
-
 target.path = $${INSTALL_ROOT}/lib
+doc.path = $${DOCDIR}/cumbia-telegram-lib
 
-INSTALLS += inc target
+INSTALLS += inc target doc
