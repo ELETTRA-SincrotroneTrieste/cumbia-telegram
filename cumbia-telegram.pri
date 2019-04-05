@@ -86,7 +86,7 @@ packagesExist(qumbia-tango-controls) {
         DEFINES += HAS_QUMBIA_TANGO_CONTROLS=1
         message("tango support enabled")
 }
-  #
+
 ## epics support?
 packagesExist(epics-base) {
     PKGCONFIG += epics-base
