@@ -213,9 +213,9 @@ An example of command line to start the *cumbia-telegram* bot is the following:
 Go to your telegram client and join the bot with the name previously registered with the *BotFather*.
 If you type the */help* command, you will notice that you are not authorized yet.
 By default, no client (*user*) is authorized. The administrator must explicitly  give access to the bot
-(see part five).
+(see part six).
 
-### Part five. Authorize new users
+### Part six. Authorize new users
 
 Security policies prevent any user to chat with the bot without authorization.
 Go into the *cumbia-telegram-control* folder and type
@@ -235,7 +235,28 @@ To authorize a user, use the -a switch followed by the user id:
 The user with that id will receive a *congratulations* message and will be able to chat with the bot
 with the default limits and options.
 
-### Part six. Play!
+
+##### Revoke authorization to a user
+
+```
+./bin/cumbia-telegram-control --dbfile ../elettra_botdb.dat -r 11223344
+```
+
+A message will be sent to the unfortunate user.
+
+##### Get statistics from the bot:
+```
+./bin/cumbia-telegram-control --dbfile ../elettra_botdb.dat -s
+```
+
+##### Help about *cumbia-telegram-control*
+```
+./bin/cumbia-telegram-control --help
+```
+
+
+
+### Part seven. Play!
 
 Once authorized, type */help* to start using the bot!
 
@@ -264,6 +285,7 @@ alias  sys/tg_test/1/double_scalar d1
 ```
 monitor d1 < 200
 ```
+
 
 
 
