@@ -59,7 +59,7 @@ SOURCES += \
 
 HEADERS += \
 # this must be installed also
-    cumbia-telegram-defs.h \
+    ../../cumbia-telegram-defs.h \
     cubotmodule.h \
     cubotplugininterface.h \
     botdb.h \

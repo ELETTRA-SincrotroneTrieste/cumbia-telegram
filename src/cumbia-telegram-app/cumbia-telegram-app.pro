@@ -64,7 +64,7 @@ SOURCES += \
 
 HEADERS += \
     ../cumbia-telegram-doc.h \
-    ../lib/cumbia-telegram-defs.h \
+    ../../cumbia-telegram-defs.h \
     \
     cubotserver.h \
     cubotlistener.h \

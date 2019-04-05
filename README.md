@@ -111,13 +111,16 @@ make -j9
 ```
 and  ```make install```
 
-Please note that the software is organized into two source trees:
+Please note that the software is organized into three source trees:
 
 - src/lib/
 - src/cumbia-telegram-app
+- cumbia-telegram-control
 
 built in that order by the top level *cumbia-telegram.pro*  *Qt project* file.
 
+The last is an *command line interface* to communicate with the bot and is used to
+authorize users and get statistics.
 
 ### Part two. Build the plugins.
 
@@ -204,4 +207,69 @@ An example of command line to start the *cumbia-telegram* bot is the following:
 - *--db=/path/to/sqliteDB.sql* (a file where the sqlite db will be stored)
 
 - *--token=telegram_bot_token* (as given by botfather at bot creation)
+
+### Part five. Connect to the *bot* with your telegram client.
+
+Go to your telegram client and join the bot with the name previously registered with the *BotFather*.
+If you type the */help* command, you will notice that you are not authorized yet.
+By default, no client (*user*) is authorized. The administrator must explicitly  give access to the bot
+(see part five).
+
+### Part five. Authorize new users
+
+Security policies prevent any user to chat with the bot without authorization.
+Go into the *cumbia-telegram-control* folder and type
+
+```
+./bin/cumbia-telegram-control --dbfile ../elettra_botdb.dat -u
+```
+
+This command will list the users into the database.
+
+To authorize a user, use the -a switch followed by the user id:
+
+```
+./bin/cumbia-telegram-control --dbfile ../elettra_botdb.dat -a 11223344
+```
+
+The user with that id will receive a *congratulations* message and will be able to chat with the bot
+with the default limits and options.
+
+### Part six. Play!
+
+Once authorized, type */help* to start using the bot!
+
+#### Some read examples:
+
+```
+sys/tg_test/1/double_scalar
+```
+
+```
+sys/tg_test/1/long_scalar > 10
+```
+
+#### Alerts
+
+```
+alert sys/tg_test/1/long_scalar > 10
+```
+
+#### Alias
+```
+alias  sys/tg_test/1/double_scalar d1
+```
+
+#### Monitor + Alias
+```
+monitor d1 < 200
+```
+
+
+
+
+
+
+
+
 

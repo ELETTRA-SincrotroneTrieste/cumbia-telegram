@@ -7,7 +7,7 @@ class CuVariant;
 
 #include <QString>
 #include <historyentry.h>
-#include <cumbia-telegram-defs.h>
+#include "../../cumbia-telegram-defs.h"
 
 class GenMsgFormatter
 {

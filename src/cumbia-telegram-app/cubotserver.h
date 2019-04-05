@@ -9,7 +9,7 @@
 #include <botreader.h> // for BotReader::RefreshMode
 #include <cubotmodule.h>
 
-#include <cumbia-telegram-defs.h> // for ControlMsg::Type
+#include "../../cumbia-telegram-defs.h" // for ControlMsg::Type
 
 class CuBotServerPrivate;
 class QJsonValue;
