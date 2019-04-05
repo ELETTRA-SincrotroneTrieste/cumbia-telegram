@@ -185,19 +185,23 @@ Once the *bot setup* is complete, just start the application as described in the
 ### Part four. Start the bot!
 
 The bot saves its configuration on a file representing a *sqlite* database.
+The database stores user *access and limit* privileges as well as client *history, bookmarks and alias*.
 The file must be passed as command line argument to the bot and must be regularly backed up by
 the administrator.
-The database stores user *access and limit* privileges as well as client *history, bookmarks and alias*.
 
+The second necessary command line argument is the *authorization token* provided by the *BotFather* at
+bot registration time.
 
+If compilation was successful, you should find a *bin* folder under *cumbia-telegram*.
+An example of command line to start the *cumbia-telegram* bot is the following:
 
+```
+./bin/cumbia-telegram --token=bot123456789:AABBCCDDeeFFggHHiiLLMMnnOOPPQQrrSSt --db=tg_botdb.dat
+```
 
-Parameters
+#### Parameters explained
 
---db=/path/to/sqliteDB.sql (a file where the sqlite db will be stored)
+- *--db=/path/to/sqliteDB.sql* (a file where the sqlite db will be stored)
 
---token=telegram_bot_token (as given by botfather at bot creation)
+- *--token=telegram_bot_token* (as given by botfather at bot creation)
 
-EXAMPLE
-
-./bin/cumbia-telegram --token=bot635922604:AAEgG6db_3kkzYZqh-LBxi-ubvl5UIEW7gE --db=/tmp/botdb.dat
