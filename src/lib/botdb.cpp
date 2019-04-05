@@ -242,11 +242,20 @@ int BotDb::addToHistory(const HistoryEntry &in)
 
     if(!m_err && !update_timestamp_only) {
         QSqlQuery bookmarks_q(m_db);
-        // keep history_len history buffer for each user
-
+        // We want to keep history table small
+        //
+        // keep history_len history buffer size for each user
+        // get all rows for the given user in the history table
+        //
+        // 1. Do not delete running alerts or monitors (whose stop_timestamp is still NULL)
+        //    so either select rows where the type is neither monitor nor alert OR where the stop_timestamp
+        //    is not null (stop timestamp NOT NULL means there is a stop date
+        // 2. take care history entries that are bookmarks are not deleted (with the bookmarks_q query
+        //    later on)
         //                                 0          1           2
         m_err = !q.exec(QString("SELECT timestamp,h_idx,_rowid_ FROM history WHERE "
                                 " user_id=%1 "
+                                " AND ((type != 'monitor' AND type != 'alert') OR stop_timestamp IS NOT NULL) "
                                 " ORDER BY timestamp DESC").arg(uid));
         if(!m_err)
             m_err = !bookmarks_q.exec("SELECT history_rowid FROM bookmarks");
@@ -257,22 +266,27 @@ int BotDb::addToHistory(const HistoryEntry &in)
         else {
             int i = 0;
             QList<int> bookmarks_idxs; // list of history._rowid_ that are bookmarked
-            while(bookmarks_q.next())
+            while(bookmarks_q.next()) // collect all bookmarks into bookmarks_idxs
                 bookmarks_idxs << bookmarks_q.value(0).toInt();
 
+            // go through all the history entries that are not still running monitors or alerts
             while(q.next()) {
                 int history_rowid = q.value(2).toInt();
                 h_idxs  << q.value(1).toInt();
 
                 bool is_bookmark = bookmarks_idxs.contains(history_rowid);
-
+                // count the number of entries excluding bookmarked rows
                 if(!is_bookmark)
                     i++;
 
                 if(i >= history_len && !is_bookmark) {
                     QSqlQuery delq(m_db);
-                    m_err = !delq.exec(QString("DELETE FROM history WHERE user_id=%1 AND timestamp='%2'")
-                                       .arg(uid).arg(q.value(0).toDateTime().toString("yyyy-MM-dd hh:mm:ss")));
+                    QString timestamp_str = q.value(0).toDateTime().toString("yyyy-MM-dd hh:mm:ss");
+                    int history_idx = q.value(1).toInt();
+                    // we delete older rows
+                    m_err = !delq.exec(QString("DELETE FROM history WHERE user_id=%1 AND timestamp='%2' "
+                                               "AND h_idx=%3")
+                                       .arg(uid).arg(timestamp_str).arg(history_idx));
                     if(m_err) {
                         m_msg = "BotDb.addToHistory: " +  delq.lastError().text();
                     }
