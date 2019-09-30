@@ -296,7 +296,7 @@ int BotMonitor::m_onPriorityChanged(int user_id,
     getModuleListener()->onSendMessageRequest(chat_id, BotmonitorMsgFormatter().monitorTypeChanged(oldcmd, newcmd));
     getDb()->monitorStopped(user_id, oldcmd, host);
     HistoryEntry he(user_id, newcmd,  newpri == BotReader::Low ?  "monitor" : "alert", host, d->src_description);
-    return getDb()->addToHistory(he);
+    return getDb()->addToHistory(he, getBotConfig());
 }
 
 void BotMonitor::m_onAlreadyMonitoring(int chat_id, const QString &cmd, const QString &host)
@@ -384,7 +384,7 @@ void BotMonitor::onSrcMonitorStarted(int user_id, int chat_id, const QString &sr
     // record new monitor into the database
     qDebug() << __PRETTY_FUNCTION__ << "adding history entry with formula " << formula << "host " << r->host() << "priority " << pri;
     HistoryEntry he(user_id, r->command(), pri == BotReader::High ? "alert" :  "monitor", host, d->src_description);
-    int history_idx = getDb()->addToHistory(he); // returns the index of the history table
+    int history_idx = getDb()->addToHistory(he, getBotConfig()); // returns the index of the history table
     // set the index of the reader according to the index in the database table
     // if database inserta failed (history_idx < 0) delete the reader
     history_idx > 0 ? r->setIndex(history_idx) : r->deleteLater();
@@ -404,7 +404,7 @@ void BotMonitor::onSrcMonitorFormulaChanged(int user_id, int chat_id, const QStr
     getDb()->monitorStopped(user_id, r->command(), r->host());
     printf("\e[1;33mADD TO HISTORY NEW ENTRY: %s\e[0m\n", qstoc(new_s));
     HistoryEntry he(user_id, new_f, r->priority() == BotReader::Low ? "monitor" : "alert", r->getAppliedHost(), d->src_description);
-    r->setIndex(getDb()->addToHistory(he));
+    r->setIndex(getDb()->addToHistory(he, getBotConfig()));
 }
 
 void BotMonitor::setOption(const QString &key, const QVariant &value)

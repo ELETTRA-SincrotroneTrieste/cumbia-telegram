@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
     signal(SIGINT, int_handler);
     signal(SIGUSR1, int_handler);
     signal(SIGUSR2, int_handler);
-    QApplication *a = new QApplication(argc, argv);
+    QApplication *a = new QApplication(argc, argv, false);
     QString tok, dbfile;
     foreach(QString s, qApp->arguments()) {
         if(s.startsWith("--token="))

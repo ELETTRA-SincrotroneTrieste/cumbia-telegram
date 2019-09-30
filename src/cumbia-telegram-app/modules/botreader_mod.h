@@ -39,6 +39,7 @@ private slots:
 private:
     BotReaderModulePrivate *d;
 
+    QString m_plotUnavailable() const;
     BotReaderModule::State m_decodeSrcCmd(const QString &txt);
     bool m_tryDecodeFormula(const QString &text);
     bool m_isBigSizeVector(const CuData &da) const;

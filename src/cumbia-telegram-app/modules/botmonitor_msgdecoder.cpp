@@ -64,8 +64,6 @@ BotMonitorMsgDecoder::Type BotMonitorMsgDecoder::decode(const TBotMsg &msg) {
 
     QRegularExpression re;
     QRegularExpressionMatch match;
-
-    printf("BotMonitorMsgDecoder: decoding \"%s\" ...\n", qstoc(m_text));
     re.setPattern("/(?:read|monitor|alert)(\\d{1,2})\\b");
     match = re.match(m_text);
     if(match.hasMatch()) {

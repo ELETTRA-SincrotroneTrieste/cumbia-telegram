@@ -1,3 +1,4 @@
-Token for CumbiaBot (Elettra)
+Token for Elettra bot
+botfather: @ElettraST_bot
 
-bot635922604:AAEgG6db_3kkzYZqh-LBxi-ubvl5UIEW7gE
+bot860392810:AAE6QyOvNN-pRfpeSyPdYHlroDZqpuuIzvQ

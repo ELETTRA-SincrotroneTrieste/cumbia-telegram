@@ -22,13 +22,15 @@ public:
 
     bool removeUser(int uid);
 
-    int addToHistory(const HistoryEntry &in);
+    int addToHistory(const HistoryEntry &in, BotConfig *bconf);
 
     bool saveProc(const HistoryEntry &he);
 
     bool clearProcTable();
 
     bool unregisterProc(const HistoryEntry &he);
+
+    bool registerHistoryType(const QString& newtype, const QString &description);
 
     QList<HistoryEntry> loadProcs();
 

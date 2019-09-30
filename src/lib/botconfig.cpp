@@ -26,7 +26,10 @@ BotConfig::BotConfig(BotDb *db)
     d->map["ttl"] = 24 * 3600;
     d->map["poll_period"] = 15000;
     d->map["max_avg_poll_period"] = 1000;
-    d->map["history_depth"] = 12;
+
+    // history depths divided by history types
+    d->map["history_read_depth"] = d->map["history_monitor_depth"] = d->map["history_alert_depth"] = 6;
+    d->map["history_host_depth"] = 4;
 
     QStringList default_operations_auth = QStringList() << "monitor" << "read" << "host" << "dbsearch";
     d->map["default_monitor_auth"] = 10;
@@ -62,11 +65,6 @@ int BotConfig::poll_period() const
 int BotConfig::max_avg_poll_period() const
 {
     return d->map["max_avg_poll_period"].toInt();
-}
-
-int BotConfig::getHistoryDepth() const
-{
-    return d->map["history_depth"].toInt();
 }
 
 int BotConfig::getDefaultAuth(const QString &operation) const

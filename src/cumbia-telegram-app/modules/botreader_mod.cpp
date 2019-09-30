@@ -70,13 +70,18 @@ void BotReaderModule::onReaderUpdate(int chat_id, const CuData &data)
         BotReader *reader = qobject_cast<BotReader *>(sender());
         // last QString in HistoryEntry constructor is for description
         HistoryEntry he(reader->userId(), reader->command(), "read", reader->getAppliedHost(), QString());
-        getDb()->addToHistory(he);
+        getDb()->addToHistory(he, getBotConfig());
     }
 }
 
 void BotReaderModule::m_updateStats(int chat_id, const CuData &dat)
 {
     getModuleListener()->onStatsUpdateRequest(chat_id, dat);
+}
+
+QString BotReaderModule::m_plotUnavailable() const
+{
+    return "👎   /plot command  must be imparted right after a vector read operation";
 }
 
 int BotReaderModule::type() const {
@@ -138,6 +143,9 @@ bool BotReaderModule::process()
         BotPlotGenerator *plotgen =  static_cast<BotPlotGenerator *> (d->volatile_ops.get(d->chat_id, BotPlotGenerator::PlotGen));
         if(plotgen) {
             getModuleListener()->onSendPictureRequest(d->chat_id, plotgen->generate());
+        }
+        else {
+            getModuleListener()->onSendMessageRequest(d->chat_id, m_plotUnavailable(), true);
         }
     }
     return true;

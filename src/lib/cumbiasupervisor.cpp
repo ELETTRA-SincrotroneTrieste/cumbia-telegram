@@ -67,7 +67,9 @@ void CumbiaSupervisor::setup()
 #ifdef HAS_QUMBIA_EPICS_CONTROLS
         // do not allow host:20000/sys/tg_test/1/double_scalar
         // force at least one letter after ":"
-        std::string ep_pattern = std::string("[A-Za-z0-9_]+:[A-Za-z_]+[A-Za-z_0-9]*");
+        // unescaped
+        // [A-Za-z0-9_\-\.]+:[A-Za-z_]+[A-Za-z_0-9\-:]*
+        std::string ep_pattern = std::string("[A-Za-z0-9_\\-\\.]+:[A-Za-z_]+[A-Za-z_0-9\\-:]*");
         std::vector<std::string> ep_patterns;
         ep_patterns.push_back(ep_pattern);
         CumbiaEpics* cuep = new CumbiaEpics(new CuThreadFactoryImpl(), new QThreadsEventBridgeFactory());

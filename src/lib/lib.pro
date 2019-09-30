@@ -1,7 +1,7 @@
 include(../../cumbia-telegram.pri)
 
 # for qwt!
-QT += gui
+QT -= gui
 
 QT += network sql script
 
@@ -14,7 +14,7 @@ CONFIG += debug
 TEMPLATE = lib
 
 PKGCONFIG += tango
-PKGCONFIG += x11
+PKGCONFIG -= x11
 
 VERSION_HEX = 0x010000
 VERSION = 1.0.0
@@ -36,7 +36,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-UNIX:INCLUDEPATH += .
+INCLUDEPATH += . ../..
 
 SOURCES += \
     botdb.cpp \

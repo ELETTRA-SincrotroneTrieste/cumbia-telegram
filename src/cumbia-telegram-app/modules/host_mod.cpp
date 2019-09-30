@@ -91,7 +91,7 @@ bool HostMod::process()
         else if(m_host_id >= 0) // setHost by host id, new_host will contain the name
             m_err = !db->setHost(m_user_id, m_chat_id, m_host_id, new_host, new_host_description);
         if(!m_err)
-            m_err = !db->addToHistory(HistoryEntry(m_user_id, m_text, "host", "", "")); // "host" is type, `host` and `description` are empty
+            m_err = !db->addToHistory(HistoryEntry(m_user_id, m_text, "host", "", ""), getBotConfig()); // "host" is type, `host` and `description` are empty
         getModuleListener()->onSendMessageRequest(m_chat_id, m_hostChanged_msg(new_host, !m_err, new_host_description, db->message()), true);
     }
     else if(m_state == GetHostList) {

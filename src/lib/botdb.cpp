@@ -48,7 +48,7 @@ BotDb::BotDb(const QString& db_file)
         m_msg = m_db.lastError().text();
     qDebug() << __PRETTY_FUNCTION__ << "database open" << m_db.isOpen() << "tables" << m_db.tables();
 
-    QStringList tables = QStringList() << "users" << "history" << "hosts" << "host_selection"
+    QStringList tables = QStringList() << "users" << "history" << "history_types" << "hosts" << "host_selection"
                                        << "proc" << "config" << "bookmarks" << "auth" << "auth_limits"
                                        << "private_chats";
 
@@ -160,6 +160,16 @@ bool BotDb::unregisterProc(const HistoryEntry &he)
     return !m_err;
 }
 
+bool BotDb::registerHistoryType(const QString &newtype, const QString& description)
+{
+    if(!m_db.isOpen())
+        return false;
+    m_msg.clear();
+    QSqlQuery q(m_db);
+    m_err = !q.exec(QString("INSERT INTO history_types VALUES('%1','%2')").arg(newtype).arg(description));
+    return !m_err;
+}
+
 QList<HistoryEntry> BotDb::loadProcs()
 {
     QList<HistoryEntry> hel;
@@ -196,7 +206,7 @@ QList<HistoryEntry> BotDb::loadProcs()
  * @param in a HistoryEntry object
  * @return < 0 if the operation failed. The index (h_idx) of the newly inserted row
  */
-int BotDb::addToHistory(const HistoryEntry &in)
+int BotDb::addToHistory(const HistoryEntry &in, BotConfig *bconf)
 {
     if(!m_db.isOpen())
         return -1;
@@ -207,15 +217,14 @@ int BotDb::addToHistory(const HistoryEntry &in)
     const QString& type = in.type;
     const QString& host = in.host;
     const QString& description = in.description;
-    int history_len = 8; // pick from db!
-    QList<int> h_idxs;
 
     QSqlQuery q(m_db);
     // first try to see if there is a matching row into the database for the new entry
     // if yes, only the timestamp field needs update
     m_err = !q.exec(QString("SELECT timestamp,h_idx FROM history WHERE "
-                            "user_id=%1 AND command='%2' AND type='%3' "
-                            "AND host='%4'")
+                            " user_id=%1 AND command='%2'"
+                            " AND type=(SELECT _rowid_ FROM history_types WHERE type='%3')"
+                            " AND host='%4'")
                     .arg(uid).arg(cmd).arg(type).arg(host));
 
     bool update_timestamp_only = q.next() && !m_err;
@@ -230,56 +239,69 @@ int BotDb::addToHistory(const HistoryEntry &in)
         // a new description is provided? update description too
         if(description.isEmpty()) {
             m_err = !q.exec(QString("UPDATE history SET timestamp=datetime(), stop_timestamp=NULL "
-                                "where user_id=%1 AND type='%2' AND h_idx=%3;")
-                        .arg(uid).arg(type).arg(h_index));
+                                    " WHERE user_id=%1 "
+                                    " AND type=(SELECT _rowid_ FROM history_types WHERE type='%2') "
+                                    " AND h_idx=%3;")
+                            .arg(uid).arg(type).arg(h_index));
         }
         else {
             m_err = !q.exec(QString("UPDATE history SET timestamp=datetime(), stop_timestamp=NULL, description='%4'"
-                                "where user_id=%1 AND type='%2' AND h_idx=%3;")
-                        .arg(uid).arg(type).arg(h_index).arg(description));
+                                    "where user_id=%1 AND type=(SELECT _rowid_ FROM history_types WHERE type='%2') "
+                                    " AND h_idx=%3")
+                            .arg(uid).arg(type).arg(h_index).arg(description));
         }
     }
 
     if(!m_err && !update_timestamp_only) {
+        QMap<QString, int> typesMap;
+        QSqlQuery typesQ(m_db);
+        m_err = !typesQ.exec("SELECT _rowid_,type from history_types");
+        while(!m_err && typesQ.next())
+            typesMap.insert(typesQ.value(1).toString(), typesQ.value(0).toInt());
+        if(m_err) {
+            this->m_setErrorMessage("BotDb.addToHistory", typesQ);
+            return false;
+        }
+
+
         QSqlQuery bookmarks_q(m_db);
-        // We want to keep history table small
-        //
-        // keep history_len history buffer size for each user
-        // get all rows for the given user in the history table
+        m_err = !bookmarks_q.exec("SELECT history_rowid FROM bookmarks");
+        QList<int> bookmarks_idxs; // list of history._rowid_ that are bookmarked
+        while(bookmarks_q.next()) // collect all bookmarks into bookmarks_idxs
+            bookmarks_idxs << bookmarks_q.value(0).toInt();
+
+        // Keep history table small
+        // For each type, get all rows for the given user in the history table
         //
         // 1. Do not delete running alerts or monitors (whose stop_timestamp is still NULL)
         //    so either select rows where the type is neither monitor nor alert OR where the stop_timestamp
         //    is not null (stop timestamp NOT NULL means there is a stop date
         // 2. take care history entries that are bookmarks are not deleted (with the bookmarks_q query
         //    later on)
-        //                                 0          1           2
-        m_err = !q.exec(QString("SELECT timestamp,h_idx,_rowid_ FROM history WHERE "
-                                " user_id=%1 "
-                                " AND ((type != 'monitor' AND type != 'alert') OR stop_timestamp IS NOT NULL) "
-                                " ORDER BY timestamp DESC").arg(uid));
-        if(!m_err)
-            m_err = !bookmarks_q.exec("SELECT history_rowid FROM bookmarks");
+        //
 
-        if(m_err) {
-            m_msg =  "BotDb.addToHistory: " + q.lastError().text();
-        }
-        else {
-            int i = 0;
-            QList<int> bookmarks_idxs; // list of history._rowid_ that are bookmarked
-            while(bookmarks_q.next()) // collect all bookmarks into bookmarks_idxs
-                bookmarks_idxs << bookmarks_q.value(0).toInt();
+        for(int k = 0; !m_err && k < typesMap.keys().size(); k++) {
+            QList<int> h_idxs;
+            const QString htype = typesMap.keys()[k];
+            qDebug() <<__PRETTY_FUNCTION__ << "TYPE " << htype;
+            int rowcnt = 0;
 
-            // go through all the history entries that are not still running monitors or alerts
+            //                                    0    1        2        3
+            m_err = !q.exec(QString("SELECT timestamp,h_idx,_rowid_,stop_timestamp FROM history WHERE "
+                " user_id=%1 AND type=%2 ORDER BY timestamp DESC").arg(uid).arg(typesMap[htype]));
+
+            // go through all the history entries that are not running monitors or alerts
             while(q.next()) {
                 int history_rowid = q.value(2).toInt();
                 h_idxs  << q.value(1).toInt();
 
+                bool is_running_monitor = (htype == "monitor" || htype == "alert") && q.value(3).isNull();
                 bool is_bookmark = bookmarks_idxs.contains(history_rowid);
                 // count the number of entries excluding bookmarked rows
                 if(!is_bookmark)
-                    i++;
-
-                if(i >= history_len && !is_bookmark) {
+                    rowcnt++;
+                int history_depth = bconf->getInt(QString("history_%1_depth").arg(htype));
+                if(rowcnt > history_depth && !is_bookmark && !is_running_monitor) {
                     QSqlQuery delq(m_db);
                     QString timestamp_str = q.value(0).toDateTime().toString("yyyy-MM-dd hh:mm:ss");
                     int history_idx = q.value(1).toInt();
@@ -295,16 +317,21 @@ int BotDb::addToHistory(const HistoryEntry &in)
                                qstoc(q.value(0).toDateTime().toString()), qstoc(delq.lastQuery()));
                     }
                 }
+            } // end while(q.next())
+
+
+            if(!m_err && htype == in.type) {
+                qDebug() << __PRETTY_FUNCTION__ << "finding available idxs in " << h_idxs;
+                // calculate first per history index available
+                h_index = m_findFirstAvailableIdx(h_idxs);
+                // user_id INTEGER NOT NULL, timestamp DATETIME NOT NULL, command TEXT NOT NULL,type TEXT NOT NULL,host TEXT DEFAULT, stop_timestamp ''
+                m_err = !q.exec(QString("INSERT INTO history VALUES(%1, datetime(), '%2',"
+                                        " (SELECT _rowid_ FROM history_types WHERE type='%3'), '%4', '%5', %6, NULL)").
+                                arg(uid).arg(cmd).arg(htype).arg(host).arg(description).arg(h_index));
+                if(m_err)
+                    m_msg =  "BotDb.addToHistory: " + q.lastError().text();
+
             }
-
-            // calculate first per history index available
-            h_index = m_findFirstAvailableIdx(h_idxs);
-            // user_id INTEGER NOT NULL, timestamp DATETIME NOT NULL, command TEXT NOT NULL,type TEXT NOT NULL,host TEXT DEFAULT, stop_timestamp ''
-            m_err = !q.exec(QString("INSERT INTO history VALUES(%1, datetime(), '%2', '%3', '%4', '%5', %6, NULL)").
-                            arg(uid).arg(cmd).arg(type).arg(host).arg(description).arg(h_index));
-            if(m_err)
-                m_msg =  "BotDb.addToHistory: " + q.lastError().text();
-
         }
     }
 
@@ -324,15 +351,16 @@ QList<HistoryEntry> BotDb::history(int user_id, const QString& type) {
     QSqlQuery q(m_db);
     QString t = type;
     if(type != "bookmarks") {
-        m_err = !q.exec(QString("SELECT user_id,timestamp,command,type,host,description,h_idx,_rowid_,stop_timestamp"
-                                " FROM history WHERE user_id=%1 AND type='%2' "
+        m_err = !q.exec(QString("SELECT user_id,timestamp,command,host,description,h_idx,_rowid_,stop_timestamp"
+                                " FROM history WHERE user_id=%1 AND"
+                                " type=(SELECT _rowid_ FROM history_types WHERE type='%2') "
                                 " ORDER BY timestamp ASC").arg(user_id).arg(t));
     }
     else { // query with no AND type='%s'
-        //                                 0                1        2     3    4    5            6     7      8       9
-        m_err = !q.exec(QString("SELECT user_id,history.timestamp,command,type,host,description,h_idx,history.rowid,stop_timestamp"
+        //                                 0                1        2     3    4    5       6     7                  8
+        m_err = !q.exec(QString("SELECT user_id,history.timestamp,command,host,description,h_idx,history._rowid_,stop_timestamp"
                                 " FROM history,bookmarks WHERE user_id=%1 "
-                                " AND bookmarks.history_rowid=history.rowid "
+                                " AND bookmarks.history_rowid=history.h_idx "
                                 " ORDER BY history.timestamp ASC").arg(user_id));
     }
     printf("executed %s\n", qstoc(q.lastQuery()));
@@ -349,7 +377,7 @@ QList<HistoryEntry> BotDb::history(int user_id, const QString& type) {
                         r.value("user_id").toInt(),
                         r.value("timestamp").toDateTime(),
                         r.value("command").toString(),
-                        r.value("type").toString(),
+                        type,
                         r.value("host").toString(),
                         r.value("description").toString());
         he.stop_datetime = r.value("stop_timestamp").toDateTime();
@@ -357,7 +385,7 @@ QList<HistoryEntry> BotDb::history(int user_id, const QString& type) {
         hel << he;
     }
     if(m_err) {
-        m_msg = "BotDb.history: " + q.lastError().text();
+        m_setErrorMessage("BotDb.history", q);
         perr("BotDb.history: database error: %s", qstoc(m_msg));
     }
     return hel;
@@ -371,7 +399,9 @@ int BotDb::fixStaleItems(const QStringList &cmd_list)
     m_err = false;
     m_msg.clear();
     QSqlQuery q(m_db);
-    m_err = !q.exec("SELECT command,h_idx FROM history WHERE stop_timestamp IS NULL AND  (type='monitor' OR type='alert') ");
+    m_err = !q.exec("SELECT command,h_idx FROM history WHERE stop_timestamp IS NULL AND "
+                    " (type=(SELECT _rowid_ FROM history_types WHERE type='monitor') OR"
+                    " type=(SELECT _rowid_ FROM history_types WHERE type='alert') ) ");
     while(!m_err && q.next()) {
         QString cmd = q.value(0).toString();
         QSqlQuery q2(m_db);
@@ -434,7 +464,9 @@ HistoryEntry BotDb::lastOperation(int uid)
         return he;
     m_msg.clear();
     QSqlQuery q(m_db);
-    m_err = !q.exec(QString("SELECT MAX(timestamp),command,type,host FROM history WHERE user_id=%1").arg(uid));
+    m_err = !q.exec(QString("SELECT MAX(timestamp),command,history_types.type,host "
+                            " FROM history,history_types WHERE user_id=%1 "
+                            " AND history.type=history_types._rowid_").arg(uid));
     if(m_err)
         m_msg = q.lastError().text();
     else {
@@ -456,7 +488,9 @@ HistoryEntry BotDb::bookmarkLast(int uid)
         return he;
     m_msg.clear();
     QSqlQuery q(m_db);
-    m_err = !q.exec(QString("SELECT MAX(timestamp),command,type,host,rowid FROM history WHERE user_id=%1").arg(uid));
+    m_err = !q.exec(QString("SELECT MAX(timestamp),command,history_types.type,host,h_idx "
+                            " FROM history,history_types WHERE user_id=%1 "
+                            " AND history_types._rowid_=history.type").arg(uid));
     if(m_err)
         m_msg = q.lastError().text();
     else {
@@ -475,8 +509,10 @@ HistoryEntry BotDb::bookmarkLast(int uid)
             m_err = !q.exec(QString("INSERT INTO bookmarks VALUES(%1,datetime())").arg(rowid));
         }
     }
-    if(m_err)
-        m_msg = "BotDb.bookmarkLast: database error: " + q.lastError().text();
+    if(m_err) {
+        m_setErrorMessage("BotDb.bookmarkLast", q);
+        perr("%s", qstoc(m_msg));
+    }
     return he;
 }
 
@@ -520,7 +556,9 @@ HistoryEntry BotDb::historyEntryFromCmd(int uid, const QString &command)
         return he;
     m_msg.clear();
     QSqlQuery q(m_db);
-    m_err = !q.exec(QString("SELECT h_idx,timestamp,type,host,description FROM history WHERE command='%1' AND user_id=%2")
+    m_err = !q.exec(QString("SELECT h_idx,timestamp,history_types.type,host,history.description"
+                            " FROM history,history_types WHERE command='%1' AND user_id=%2"
+                            " AND history.type=history_types._rowid_")
                     .arg(command).arg(uid));
     while(!m_err && q.next()) {
         he = HistoryEntry(q.value(0).toInt(), uid, q.value(1).toDateTime(), command,
@@ -859,7 +897,7 @@ void BotDb::createDb(const QString& tablename)
             m_err = !q.exec("CREATE TABLE history (user_id INTEGER NOT NULL, "
                             "timestamp DATETIME NOT NULL, "
                             "command TEXT NOT NULL,"
-                            "type TEXT NOT NULL,"
+                            "type INTEGER NOT NULL,"
                             "host TEXT DEFAULT '',"
                             "description TEXT DEFAULT '',"
                             "h_idx INTEGER NOT NULL,"
@@ -901,6 +939,9 @@ void BotDb::createDb(const QString& tablename)
             m_err = !q.exec("CREATE TABLE private_chats (user_id INTEGER NOT NULL,"
                             " chat_id INTEGER NOT NULL, "
                             " PRIMARY KEY(user_id,chat_id) )");
+        }
+        else if(tablename == "history_types") {
+            m_err = !q.exec("CREATE TABLE history_types(type TEXT PRIMARY KEY, description TEXT)");
         }
 
         if(m_err)

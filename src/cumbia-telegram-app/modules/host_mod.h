@@ -11,7 +11,7 @@ public:
 
     enum State { Undefined, GetHost, SetHost, GetHostList };
 
-    HostMod(CuBotModuleListener *lis, BotDb *db, BotConfig *conf = nullptr);
+    HostMod(CuBotModuleListener *lis, BotDb *db, BotConfig *conf);
 
     void reset();
 

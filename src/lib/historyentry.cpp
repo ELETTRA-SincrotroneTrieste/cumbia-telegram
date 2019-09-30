@@ -126,7 +126,7 @@ QString HistoryEntry::formatEntry_msg(int idx, int ttl, bool is_bookmark) const
         if(!host.isEmpty())
             msg += " (" + host + ")";
     }
-    msg+="\n\n";
+    msg+="\n";
 
     return msg;
 }

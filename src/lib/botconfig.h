@@ -19,8 +19,6 @@ public:
 
     int max_avg_poll_period() const;
 
-    int getHistoryDepth() const;
-
     int getDefaultAuth(const QString& operation) const;
 
     int getBotListenerMsgPollMillis() const;

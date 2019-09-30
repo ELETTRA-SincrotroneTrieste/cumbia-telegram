@@ -69,11 +69,19 @@ QString DataMsgFormatter::fromData_msg(const CuData &d, FormatOption f, const QS
 
         // value
         msg += "<b>" + eval_value + "</b>";
+        if(d.containsKey("raw_value")) {
+            QString raw_v = QString::fromStdString(d["raw_value"].toString());
+            if(raw_v.length() > MAXVALUELEN - 3) {
+                raw_v.truncate(MAXVALUELEN - 3);
+                raw_v += "...";
+            }
+            msg += " [ " + raw_v + " ]";
+        }
 
         // measurement unit if available
         QString du = QString::fromStdString(d["display_unit"].toString());
         if(!du.isEmpty())
-            msg += "  <b>" + fh.escape(QString::fromStdString(d["display_unit"].toString())) +  "</b>";
+            msg += "  [" + fh.escape(QString::fromStdString(d["display_unit"].toString())) +  "]";
 
         eval_value.length() < 10 ? msg += "   " : msg += "\n";
 

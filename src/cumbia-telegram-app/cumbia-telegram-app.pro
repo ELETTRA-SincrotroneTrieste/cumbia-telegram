@@ -1,7 +1,7 @@
 include(../../cumbia-telegram.pri)
 
 # for qwt!
-QT += gui
+QT -= gui
 
 QT += network sql script
 
@@ -14,7 +14,7 @@ CONFIG += debug
 TARGET = ../../bin/cumbia-telegram
 
 PKGCONFIG += tango
-PKGCONFIG += x11
+#PKGCONFIG += x11
 
 packagesExist(cumbia) {
     PKGCONFIG += cumbia
@@ -33,8 +33,9 @@ CONFIG -= app_bundle
 # deprecated API in order to know how to port your code away from it.
 DEFINES += QT_DEPRECATED_WARNINGS
 
-
-INCLUDEPATH += ../lib .. modules
+# ../.. for cumbia-telegram-defs.h
+#
+INCLUDEPATH += ../lib .. modules ../..
 
 # You can also make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.

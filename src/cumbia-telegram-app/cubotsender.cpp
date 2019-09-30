@@ -97,7 +97,7 @@ void CuBotSender::sendPic(int chat_id, const QByteArray &imgBytes, bool silent)
     imgPart.setBody(imgBytes);
     mpart->append(imgPart);
 
-    QString u = "https://api.telegram.org/bot635922604:AAEgG6db_3kkzYZqh-LBxi-ubvl5UIEW7gE/sendPhoto";
+    QString u = "https://api.telegram.org/" + d->key + "/sendPhoto";
     QUrlQuery params;
     params.addQueryItem("chat_id", QString::number(chat_id));
     if(silent)

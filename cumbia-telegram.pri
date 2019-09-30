@@ -113,3 +113,6 @@ else {
     message("epics support disabled")
 }
 
+
+
+QT -= gui widgets
