@@ -12,10 +12,10 @@ class BotMonitorMsgDecoder
 {
 public:
 
-    enum Type { Invalid, Monitor, Alert, StopMonitor, CmdLink, MaxType = 16 };
+    enum Type { Invalid, Monitor, Alert, StopMonitor, CmdLink, Settings, MaxType = 16 };
 
     const char types[MaxType][48] = { "Invalid",  "Monitor", "Alert", "StopMonitor",
-                                      "CmdLink",
+                                      "CmdLink", "Settings",
                                       "MaxType" };
 
     BotMonitorMsgDecoder(const CuControlsFactoryPool &fap);

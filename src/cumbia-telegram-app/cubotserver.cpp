@@ -21,6 +21,7 @@
 #include "help_mod.h"
 #include "cubotmsgtracker.h"
 #include "botdb.h"
+#include "settings_mod.h"
 
 #include <cumacros.h>
 #include <QtDebug>
@@ -206,12 +207,38 @@ void CuBotServer::start()
 
         // load modules
         m_loadModules();
-        m_loadPlugins();
+
+        QMap<int, QString> pluginsonames_map;
+        m_loadPlugins(pluginsonames_map);
+
+        SettingsMod *settingsMod = new SettingsMod(this);
+        m_registerModule(settingsMod);
+        settingsMod->setModuleList(d->modules_map.values());
 
         // after loading modules and plugins load help: needs the list of registered modules
         HelpMod *helpMod = new HelpMod(this);
         m_registerModule(helpMod);
         helpMod->setModuleList(d->modules_map.values());
+
+        // print modules
+        printf("\n[bot] \e[1;4mMODULES\e[0m:\n");
+        foreach(int k, d->modules_map.keys()) {
+            QString desc = d->modules_map[k]->description();
+            if(desc.size() > 68) {
+                desc.truncate(65);
+                desc += "...";
+            }
+            printf("[bot] \e[0;32m+\e[0m module \"\e[1;32m%20s\e[0m | type \e[1;32m%4d\e[0m | [%70s]\"\n",
+                   qstoc(d->modules_map[k]->name()), k, qstoc(desc));
+        }
+        printf("\n[bot] \e[1;4mPLUGINS\e[0m:\n");
+        // print plugins
+        foreach(int key, d->modules_map.keys()) {
+            CuBotModule *i = d->modules_map[key];
+            if(i->isPlugin())
+                printf("[bot] \e[1;32m+\e[0m plugin \"\e[1;32m%20s\e[0m | type \e[1;32m%4d\e[0m | [%70s] | \e[0;36m%50s\e[0m\n",
+                       qstoc(i->name()), i->type(), qstoc(i->description()), qstoc(pluginsonames_map[key]));
+        }
 
         m_restoreProcs();
 
@@ -297,31 +324,20 @@ void CuBotServer::m_loadModules()
     BotReaderModule *botRmod = new BotReaderModule(this, d->cu_supervisor, this, d->bot_db, d->botconf);
     m_registerModule(botRmod);
     d->bot_db->registerHistoryType("read", "read operations");
+
     // register host manager
     HostMod *hostMod = new HostMod(this, d->bot_db, d->botconf);
     m_registerModule(hostMod);
     d->bot_db->registerHistoryType("host", "host settings");
-
-    //
-    foreach(int k, d->modules_map.keys()) {
-        QString desc = d->modules_map[k]->description();
-        if(desc.size() > 68) {
-            desc.truncate(65);
-            desc += "...";
-        }
-        printf("[bot] \e[0;32m+\e[0m module \"\e[1;32m%20s\e[0m | type \e[1;32m%4d\e[0m | [%70s]\"\n",
-               qstoc(d->modules_map[k]->name()), k, qstoc(desc));
-    }
 }
 
-void CuBotServer::m_loadPlugins()
+void CuBotServer::m_loadPlugins(QMap<int, QString> &pluginsonames_map)
 {
     CuPluginLoader pl;
     QRegExp plugin_name_re("cumbia-telegram-.+plugin.so");
-    printf("\n[bot] \e[1;4mloading plugins\e[0m from \"%s\"", CUMBIA_TELEGRAM_PLUGIN_DIR);
+    printf("[bot] \e[1;4mloading plugins\e[0m from \"%s\"...\n", CUMBIA_TELEGRAM_PLUGIN_DIR);
 
     bool register_success;
-    QMap<int, QString> pluginsonames_map;
     QStringList paths = pl.getPluginAbsoluteFilePaths(CUMBIA_TELEGRAM_PLUGIN_DIR, plugin_name_re);
     foreach(QString pa, paths) {
         QPluginLoader loader(pa);
@@ -342,12 +358,6 @@ void CuBotServer::m_loadPlugins()
         else {
             perr("failed to load plugin loader under path %s: %s", qstoc(pa), qstoc(loader.errorString()));
         }
-    }
-    foreach(int key, d->modules_map.keys()) {
-        CuBotModule *i = d->modules_map[key];
-        if(i->isPlugin())
-            printf("[bot] \e[1;32m+\e[0m plugin \"\e[1;32m%20s\e[0m | type \e[1;32m%4d\e[0m | [%70s] | \e[0;36m%50s\e[0m\n",
-                   qstoc(i->name()), i->type(), qstoc(i->description()), qstoc(pluginsonames_map[key]));
     }
 }
 

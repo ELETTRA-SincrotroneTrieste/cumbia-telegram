@@ -51,7 +51,7 @@ private:
 
     void m_loadModules();
     bool m_registerModule(CuBotModule *mod);
-    void m_loadPlugins();
+    void m_loadPlugins(QMap<int, QString> &pluginsonames_map);
     void m_unloadAll();
 
     void m_setupMonitor();

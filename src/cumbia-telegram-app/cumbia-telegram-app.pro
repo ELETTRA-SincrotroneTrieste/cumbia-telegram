@@ -61,7 +61,8 @@ SOURCES += \
     modules/botmonitor_mod_msgformatter.cpp \
     modules/host_mod.cpp \
     modules/help_mod.cpp \
-    cubotmsgtracker.cpp
+    cubotmsgtracker.cpp \
+    modules/settings_mod.cpp
 
 HEADERS += \
     ../cumbia-telegram-doc.h \
@@ -84,7 +85,8 @@ HEADERS += \
     modules/moduleutils.h \
     modules/botmonitor_mod_msgformatter.h \
     modules/host_mod.h \
-    modules/help_mod.h
+    modules/help_mod.h \
+    modules/settings_mod.h
 
 RESOURCES += \
     cumbia-telegram.qrc

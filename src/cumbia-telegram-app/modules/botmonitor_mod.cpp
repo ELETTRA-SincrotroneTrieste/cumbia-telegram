@@ -36,7 +36,6 @@ public:
     CuControlsFactoryPool ctrl_factory_pool;
     int ttl, poll_period, max_avg_poll_period;
     BotMonitorMsgDecoder *mon_msg_decoder;
-    QMap<QString, QVariant> options;
     CuFormulaParseHelper *formula_parser_helper;
     QString src_description;
 };
@@ -74,6 +73,10 @@ BotMonitor::BotMonitor(QObject *parent, const CumbiaSupervisor &cu_s,
             this, SLOT(onSrcMonitorFormulaChanged(int, int, QString,QString,QString,QString)));
     connect(this, SIGNAL(startError(int, const QString&, const QString&)), this,
             SLOT(onSrcMonitorStartError(int, const QString&, const QString&)));
+
+    // init options used before sending message
+    setOption("sound", "off");
+    setOption("new_msg", "off");
 }
 
 bool BotMonitor::error() const
@@ -334,9 +337,10 @@ void BotMonitor::onNewMonitorData(int chat_id, const CuData &da, int reader_idx)
 {
     DataMsgFormatter mf;
     CuBotModuleListener *lis = getModuleListener();
-    bool silent = da["silent"].toBool(); // if true, low priority: monitor. If false hi pri: alert
+    bool silent = getOption("sound").toString() == "off";
+    bool edit = getOption("new_msg").toString() == "off";
     const QString m = mf.fromData_msg(da, DataMsgFormatter::FormatShort, d->src_description);
-    if(silent) {
+    if(edit) {
         lis->onEditMessageRequest(chat_id, reader_idx, m);
     }
     else
@@ -386,7 +390,7 @@ void BotMonitor::onSrcMonitorStarted(int user_id, int chat_id, const QString &sr
     HistoryEntry he(user_id, r->command(), pri == BotReader::High ? "alert" :  "monitor", host, d->src_description);
     int history_idx = getDb()->addToHistory(he, getBotConfig()); // returns the index of the history table
     // set the index of the reader according to the index in the database table
-    // if database inserta failed (history_idx < 0) delete the reader
+    // if database insert failed (history_idx < 0) delete the reader
     history_idx > 0 ? r->setIndex(history_idx) : r->deleteLater();
 }
 
@@ -405,11 +409,6 @@ void BotMonitor::onSrcMonitorFormulaChanged(int user_id, int chat_id, const QStr
     printf("\e[1;33mADD TO HISTORY NEW ENTRY: %s\e[0m\n", qstoc(new_s));
     HistoryEntry he(user_id, new_f, r->priority() == BotReader::Low ? "monitor" : "alert", r->getAppliedHost(), d->src_description);
     r->setIndex(getDb()->addToHistory(he, getBotConfig()));
-}
-
-void BotMonitor::setOption(const QString &key, const QVariant &value)
-{
-    d->options[key] = value;
 }
 
 int BotMonitor::type() const
@@ -494,7 +493,31 @@ bool BotMonitor::process()
             lis->onSendMessageRequest(chat_id, GenMsgFormatter().error("CuBotServer", d->msg));
         }
     }
+    else if(t == BotMonitorMsgDecoder::Settings) {
+         OptionDesc od = optionMatch(txt);
+         success = od.isValid();
+         if(!success)
+             d->msg = "invalid key or value in " + txt + " or command not starting with \"/set_\"";
+         if(success && (success = od.setCurrentValueFromCmd(txt))) {
+            setOption(od.key, od.current_set);
+         }
+         if(!success)
+             d->msg = "invalid value in command \"" + txt + "\"";
+         success ? lis->onSendMessageRequest(chat_id, QString("successfully set <i>" + od.key + "</i> to <b>" + od.current_set + "</b>")) :
+                   lis->onSendMessageRequest(chat_id, GenMsgFormatter().error("CuBotServer", d->msg));
+    }
     return success;
+}
+
+QList<OptionDesc>  BotMonitor::getOptionsDesc() const
+{
+    OptionDesc sndopt("sound");
+    sndopt.options["enable sound on notifications"] = "on";
+    sndopt.options["disable sound on notifications (default)"] = "off";
+    OptionDesc newmsgopt("new_msg");
+    newmsgopt.options["updates always in new message"] = "on";
+    newmsgopt.options["updates change current message when possible"] = "off";
+    return QList<OptionDesc> () << sndopt << newmsgopt;
 }
 
 bool BotMonitor::m_isBigSizeVector(const CuData &da) const

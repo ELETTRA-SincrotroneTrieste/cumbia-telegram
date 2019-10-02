@@ -256,13 +256,17 @@ int BotDb::addToHistory(const HistoryEntry &in, BotConfig *bconf)
         QMap<QString, int> typesMap;
         QSqlQuery typesQ(m_db);
         m_err = !typesQ.exec("SELECT _rowid_,type from history_types");
+        if(!m_err && !typesQ.next()) {
+            perr("BotDb::addToHistory: no registered history types: be sure to call registerHistoryType for "
+                 "modules whose commands need to be recorded on the database (monitor, alert, read...)");
+            return false;
+        }
         while(!m_err && typesQ.next())
             typesMap.insert(typesQ.value(1).toString(), typesQ.value(0).toInt());
         if(m_err) {
             this->m_setErrorMessage("BotDb.addToHistory", typesQ);
             return false;
         }
-
 
         QSqlQuery bookmarks_q(m_db);
         m_err = !bookmarks_q.exec("SELECT history_rowid FROM bookmarks");
@@ -285,7 +289,6 @@ int BotDb::addToHistory(const HistoryEntry &in, BotConfig *bconf)
             const QString htype = typesMap.keys()[k];
             qDebug() <<__PRETTY_FUNCTION__ << "TYPE " << htype;
             int rowcnt = 0;
-
             //                                    0    1        2        3
             m_err = !q.exec(QString("SELECT timestamp,h_idx,_rowid_,stop_timestamp FROM history WHERE "
                 " user_id=%1 AND type=%2 ORDER BY timestamp DESC").arg(uid).arg(typesMap[htype]));
@@ -339,6 +342,7 @@ int BotDb::addToHistory(const HistoryEntry &in, BotConfig *bconf)
         perr("BotDb.addToHistory: database error: query %s %s",  qstoc(q.lastQuery()), qstoc(m_msg));
         return -1;
     }
+    printf("BotDb::addToHistory returning index %d\n", h_index);
     return h_index;
 }
 

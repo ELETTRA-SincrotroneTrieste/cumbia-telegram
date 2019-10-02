@@ -77,6 +77,12 @@ BotMonitorMsgDecoder::Type BotMonitorMsgDecoder::decode(const TBotMsg &msg) {
             m_cmdLinkIdx = match.captured(1).toInt();
             m_type = StopMonitor;
         }
+        else { // settings
+            re.setPattern("/{0,1}set_");
+            if(re.match(m_text).hasMatch())
+                m_type = Settings;
+        }
+
     }
     if(m_type == Invalid)
         m_type = m_decodeSrcCmd(m_text.trimmed());

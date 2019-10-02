@@ -9,6 +9,7 @@ class QSqlDatabase;
 class CuData;
 
 #include <tbotmsg.h>
+#include <optiondesc.h>
 #include <cubotvolatileoperation.h>
 #include <QVariant>
 
@@ -52,6 +53,10 @@ public:
     virtual void setConf(BotConfig *conf);
 
     virtual void setOption(const QString& key, const QVariant& value);
+
+    virtual QList<OptionDesc> getOptionsDesc() const;
+
+    virtual OptionDesc optionMatch(const QString& txt) const;
 
     virtual int type() const = 0;
 
