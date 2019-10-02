@@ -70,7 +70,7 @@ void BotReaderModule::onReaderUpdate(int chat_id, const CuData &data)
         BotReader *reader = qobject_cast<BotReader *>(sender());
         // last QString in HistoryEntry constructor is for description
         HistoryEntry he(reader->userId(), reader->command(), "read", reader->getAppliedHost(), QString());
-        getDb()->addToHistory(he);
+        getDb()->addToHistory(he, getBotConfig());
     }
 }
 

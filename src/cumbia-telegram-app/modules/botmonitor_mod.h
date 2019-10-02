@@ -106,7 +106,6 @@ private slots:
                                     const QString &host, const QString &old, const QString &new_f);
 
 public:
-    void setOption(const QString& key, const QVariant& value);
     int type() const;
     QString name() const;
     QString description() const;
@@ -115,6 +114,7 @@ public:
     AccessMode needsStats() const ;
     int decode(const TBotMsg &msg);
     bool process();
+    QList<OptionDesc> getOptionsDesc() const override;
 
 private:
 

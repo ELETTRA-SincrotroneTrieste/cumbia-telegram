@@ -212,6 +212,10 @@ bool CuFormulaParseHelper::needsHost(const QString &src) const
 
 QString CuFormulaParseHelper::m_buildSrcPattern() const
 {
+    if(m_src_patterns.isEmpty()) {
+        printf("\e[1;31mCuFormulaParseHelper.m_buildSrcPattern: m_src_patterns map empty!!\e[0m\n\n\n");
+        return QString();
+    }
     int siz = m_src_patterns.values().size();
     QString pattern = "((?:";
     for(int i = 0; i < siz; i++) {

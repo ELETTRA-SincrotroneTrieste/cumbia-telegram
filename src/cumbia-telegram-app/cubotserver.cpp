@@ -21,6 +21,7 @@
 #include "help_mod.h"
 #include "cubotmsgtracker.h"
 #include "botdb.h"
+#include "settings_mod.h"
 
 #include <cumacros.h>
 #include <QtDebug>
@@ -208,6 +209,10 @@ void CuBotServer::start()
         m_loadModules();
         m_loadPlugins();
 
+        SettingsMod *settingsMod = new SettingsMod(this);
+        m_registerModule(settingsMod);
+        settingsMod->setModuleList(d->modules_map.values());
+
         // after loading modules and plugins load help: needs the list of registered modules
         HelpMod *helpMod = new HelpMod(this);
         m_registerModule(helpMod);
@@ -285,6 +290,8 @@ void CuBotServer::m_loadModules()
     m_setupMonitor();
     // register monitor
     m_registerModule(d->bot_mon);
+    d->bot_db->registerHistoryType("monitor", "monitor a source over time");
+    d->bot_db->registerHistoryType("alert", "monitor a source over time and alert if a special condition is met");
 
     printf("\n[bot] \e[1;4mregistering modules\e[0m...\n");
     // alias
@@ -294,9 +301,13 @@ void CuBotServer::m_loadModules()
     // register reader
     BotReaderModule *botRmod = new BotReaderModule(this, d->cu_supervisor, this, d->bot_db, d->botconf);
     m_registerModule(botRmod);
+    d->bot_db->registerHistoryType("read", "read operations");
+
     // register host manager
     HostMod *hostMod = new HostMod(this, d->bot_db);
     m_registerModule(hostMod);
+    d->bot_db->registerHistoryType("host", "host settings");
+
 
     //
     foreach(int k, d->modules_map.keys()) {

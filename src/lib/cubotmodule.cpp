@@ -63,6 +63,24 @@ void CuBotModule::setOption(const QString &key, const QVariant &value)
     d->options.insert(key, value);
 }
 
+/** \brief returns a map containing the configuration description as key and the *option key* as value
+ *
+ * @return QMap key: the option description; value: the *option "key"* that can be used with setOption
+ */
+QList<OptionDesc> CuBotModule::getOptionsDesc() const
+{
+    return QList<OptionDesc>  ();
+}
+
+OptionDesc CuBotModule::optionMatch(const QString &txt) const {
+    QList<OptionDesc> ods = getOptionsDesc();
+    foreach (OptionDesc od, ods) {
+        if(od.matches(txt))
+            return od;
+    }
+    return OptionDesc();
+}
+
 CuBotModuleListener *CuBotModule::getModuleListener() const
 {
     return d->listener;
