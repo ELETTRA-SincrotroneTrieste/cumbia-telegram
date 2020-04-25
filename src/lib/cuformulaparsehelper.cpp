@@ -130,6 +130,7 @@ QString CuFormulaParseHelper::injectHostIfNeeded(const QString &host, const QStr
  */
 QStringList CuFormulaParseHelper::sources(const QString &srcformula) const
 {
+    printf("CuFormulaParseHelper::sources: srcformula %s: calling m_buildSrcPatterns\n", qstoc(srcformula));
     QString pattern = m_buildSrcPattern();
     QRegularExpression re(pattern);
     QRegularExpressionMatchIterator i = re.globalMatch(srcformula);

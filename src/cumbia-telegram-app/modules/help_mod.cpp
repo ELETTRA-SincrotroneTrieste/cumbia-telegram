@@ -1,5 +1,6 @@
 #include "help_mod.h"
 #include <QList>
+#include <QFile>
 #include <cumacros.h>
 #include <QTextStream>
 

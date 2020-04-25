@@ -18,7 +18,6 @@ public:
 
     CuFormulaPluginI *formulaPlugin() const;
 
-
     // cumbia stuff
     CuControlsFactoryPool ctrl_factory_pool;
     CumbiaPool *cu_pool;

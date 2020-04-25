@@ -166,10 +166,14 @@ bool BotReaderModule::m_tryDecodeFormula(const QString &text)
     bool is_formula = true;
     // text does not start with either monitor or alarm
     d->source = QString();
-
-    QString norm_fpattern = d->cu_s.formulaPlugin()->getFormulaParserInstance()->normalizedFormulaPattern();
+    CuFormulaPluginI *plu_i = d->cu_s.formulaPlugin();
+    // CuFormulaPlugin::getFormulaParserInstance: The caller acquires the ownership of the new object.
+    CuFormulaParserI *parser = plu_i->getFormulaParserInstance();
+    QString norm_fpattern = parser->normalizedFormulaPattern();
+    printf("\e[1;33mBotReaderModule::m_tryDecodeFormula: normalized formula pattern \"%s\"\e[0m\n", norm_fpattern);
     !d->formula_parser_helper->isNormalizedForm(text, norm_fpattern) ? d->source = d->formula_parser_helper->toNormalizedForm(text) : d->source = text;
     d->detected_sources = d->formula_parser_helper->sources(d->source);
+    delete parser;
     return is_formula;
 }
 

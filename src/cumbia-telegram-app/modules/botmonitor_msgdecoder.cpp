@@ -97,7 +97,7 @@ BotMonitorMsgDecoder::Type BotMonitorMsgDecoder::m_decodeSrcCmd(const QString &t
     m_type = Invalid;
     QStringList cmd_parts = txt.split(QRegExp("\\s+"), QString::SkipEmptyParts);
     m_type = m_StrToCmdType(txt);
-    printf("\e[0;34mtryDecodeFrmula decoded type is %d\e[0m\n", m_type);
+    printf("\e[0;34mBotMonitorMsgDecoder::m_decodeSrcCmd decoded type is %d\e[0m\n", m_type);
     if(m_type != Invalid)  {
         // monitor|stop or some other action on tango source
         QString restOfLine;

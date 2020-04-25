@@ -1,4 +1,4 @@
 Token for Elettra bot
 botfather: @ElettraST_bot
 
-bot860392810:AAE6QyOvNN-pRfpeSyPdYHlroDZqpuuIzvQ
+bot860392810:AAEKkXKX7a5_dRl3eKFjuEAnSlMJY-ZCnmc

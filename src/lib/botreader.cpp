@@ -123,6 +123,7 @@ void BotReader::setPropertiesOnly(bool props_only)
  */
 QStringList BotReader::sources() const
 {
+    printf("BotReader.sources: calling d->fparser_helper->sources: d->source %s\n", qstoc(d->source));
     return d->fparser_helper->sources(d->source);
 }
 
@@ -388,6 +389,10 @@ void BotReader::setSource(const QString &s)
         d->context->setOptions(options);
 
     QString src = d->fparser_helper->injectHostIfNeeded(d->host, s, &d->needs_host);
+    printf("BotReader::setSource: gonna replace reader ");
+    if(d->context->getReader() != nullptr)
+        printf("%s",  qstoc(d->context->getReader()->source()));
+    printf(" with %s\n",qstoc(src));
     CuControlsReaderA * r = d->context->replace_reader(src.toStdString(), this);
     d->read_ok = (r != nullptr);
     if(r) {

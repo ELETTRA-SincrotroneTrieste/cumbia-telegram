@@ -151,30 +151,26 @@ int BotMonitor::maxAveragePollingPeriod() const
 bool BotMonitor::stopAll(int chat_id, const QStringList &srcs)
 {
     qDebug() << __PRETTY_FUNCTION__ << chat_id << srcs;
-    bool found = false;
     d->err = !d->readersMap.contains(chat_id);
-    QMutableMapIterator<int, BotReader *> it(d->readersMap);
-    while(it.hasNext()) {
+    QMutableMapIterator<int, BotReader *> it(d->readersMap); // multimap
+    while(!d->err && it.hasNext()) {
         it.next();
         if(it.key() == chat_id) {
             BotReader *r = it.value();
-            bool delet = srcs.isEmpty();
-            for(int i = 0; i < srcs.size() && !delet; i++) {
-                delet = r->sourceMatch(srcs[i]);
-                qDebug() << __PRETTY_FUNCTION__ << chat_id << "fickin match" << srcs[i] << delet;
+            for(int i = 0; i < srcs.size(); i++) {
+                if(r->sourceMatch(srcs[i])) {
+                    qDebug() << __PRETTY_FUNCTION__ << chat_id << "match" << srcs[i];
+                    emit stopped(r->userId(), chat_id, r->source(), r->command(), r->host(), "user request");
+                    r->deleteLater();
+                }
             }
-            if(delet) {
-                emit stopped(r->userId(), chat_id, r->source(), r->command(), r->host(), "user request");
-                r->deleteLater();
-                it.remove();
-                found = true;
-            }
+            it.remove();
         }
     }
-    if(!found)
+    if(d->err)
         d->msg = "BotMonitor.stop: none of the sources matching one of the patterns"
                  " \"" + srcs.join(", ") + "\" are monitored";
-    return !d->err && found;
+    return !d->err;
 }
 
 
@@ -183,24 +179,22 @@ bool BotMonitor::stopByIdx(int chat_id, int index)
     printf("BotMonitor.stopByIdx chat id %d index %d\n", chat_id, index);
     bool found = false;
     BotReader *r = nullptr;
-    QMutableMapIterator<int, BotReader *> it(d->readersMap);
-    while(it.hasNext() && !found) {
+    QMutableMapIterator<int, BotReader *> it(d->readersMap); // multimap!
+    while(it.hasNext()) {
         it.next();
         if(it.key() == chat_id) {
             r = it.value();
             if(r->index() == index) {
                 it.remove();
                 found = true;
-                break;
+                emit stopped(r->userId(), chat_id, r->source(), r->command(), r->host(), "user request");
+                r->deleteLater();
+                // found but this is a multimap, so there may be multiple entries with chat_id
             }
         }
     }
     if(!found)
         d->msg = "BotMonitor.stopByIdx: no reader found with index " + QString::number(index);
-    else {
-        emit stopped(r->userId(), chat_id, r->source(), r->command(), r->host(), "user request");
-        r->deleteLater();
-    }
     return found;
 }
 
@@ -289,11 +283,11 @@ void BotMonitor::m_onFormulaChanged(int user_id, int chat_id, const QString &src
 
 // returns the index of the updated/newly inserted history entry
 int BotMonitor::m_onPriorityChanged(int user_id,
-                                     int chat_id,
-                                     const QString &oldcmd,
-                                     const QString &newcmd,
-                                     BotReader::Priority newpri,
-                                     const QString& host)
+                                    int chat_id,
+                                    const QString &oldcmd,
+                                    const QString &newcmd,
+                                    BotReader::Priority newpri,
+                                    const QString& host)
 {
     qDebug() << __PRETTY_FUNCTION__ << "old type " << oldcmd << "new " << newcmd;
     getModuleListener()->onSendMessageRequest(chat_id, BotmonitorMsgFormatter().monitorTypeChanged(oldcmd, newcmd));
@@ -312,9 +306,13 @@ void BotMonitor::m_onLastUpdate(int chat_id, const CuData &)
     BotReader *reader = qobject_cast<BotReader *>(sender());
     emit stopped(reader->userId(), chat_id, reader->source(), reader->command(), reader->host(), "end of TTL");
     reader->deleteLater();
-    QMap<int, BotReader *>::iterator it = d->readersMap.begin();
-    while(it != d->readersMap.end())
-        it.value() == reader ? it =  d->readersMap.erase(it) : ++it;
+
+    QMutableMapIterator<int, BotReader *> it(d->readersMap); // multimap
+    while(it.hasNext()) {
+        it.next();
+        if(it.value() == reader)
+            it.remove();
+    }
 }
 
 void BotMonitor::m_onReaderModeChanged(BotReader::RefreshMode rm)
@@ -472,7 +470,7 @@ bool BotMonitor::process()
                                d->mon_msg_decoder->startDateTime());
         if(!success)
             lis->onSendMessageRequest(d->mon_msg_decoder->chatId(),
-                                              GenMsgFormatter().error("CuBotServer", d->msg));
+                                      GenMsgFormatter().error("CuBotServer", d->msg));
     }
     else if(t == BotMonitorMsgDecoder::StopMonitor && d->mon_msg_decoder->cmdLinkIdx() < 0) {
         QStringList srcs = d->formula_parser_helper->sources(d->mon_msg_decoder->source());
@@ -494,17 +492,17 @@ bool BotMonitor::process()
         }
     }
     else if(t == BotMonitorMsgDecoder::Settings) {
-         OptionDesc od = optionMatch(txt);
-         success = od.isValid();
-         if(!success)
-             d->msg = "invalid key or value in " + txt + " or command not starting with \"/set_\"";
-         if(success && (success = od.setCurrentValueFromCmd(txt))) {
+        OptionDesc od = optionMatch(txt);
+        success = od.isValid();
+        if(!success)
+            d->msg = "invalid key or value in " + txt + " or command not starting with \"/set_\"";
+        if(success && (success = od.setCurrentValueFromCmd(txt))) {
             setOption(od.key, od.current_set);
-         }
-         if(!success)
-             d->msg = "invalid value in command \"" + txt + "\"";
-         success ? lis->onSendMessageRequest(chat_id, QString("successfully set <i>" + od.key + "</i> to <b>" + od.current_set + "</b>")) :
-                   lis->onSendMessageRequest(chat_id, GenMsgFormatter().error("CuBotServer", d->msg));
+        }
+        if(!success)
+            d->msg = "invalid value in command \"" + txt + "\"";
+        success ? lis->onSendMessageRequest(chat_id, QString("successfully set <i>" + od.key + "</i> to <b>" + od.current_set + "</b>")) :
+                  lis->onSendMessageRequest(chat_id, GenMsgFormatter().error("CuBotServer", d->msg));
     }
     return success;
 }
