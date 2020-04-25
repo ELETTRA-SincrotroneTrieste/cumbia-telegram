@@ -92,7 +92,7 @@ QString BotMonitor::message() const
 BotReader *BotMonitor::findReader(int chat_id, const QString &expression, const QString &host) const
 {
     QSet<QString> srcs = d->formula_parser_helper->sources(expression).toSet(); // extract sources from expression
-    for(QMap<int, BotReader *>::iterator it = d->readersMap.begin(); it != d->readersMap.end(); ++it) {
+    for(QMap<int, BotReader *>::const_iterator it = d->readersMap.begin(); it != d->readersMap.end(); ++it) {
         qDebug() << __PRETTY_FUNCTION__ << "find srcs" << srcs << "reader srcs" << it.value()->sources() <<
                     "find host" << host << " reader host " << it.value()->host() <<
                     "find formula " << expression << "reader formula " << it.value()->source()
@@ -109,7 +109,7 @@ BotReader *BotMonitor::findReaderByUid(int user_id, const QString &expression, c
 {
     QString expr = d->formula_parser_helper->toNormalizedForm(expression);
     QSet<QString> srcs = d->formula_parser_helper->sources(expr).toSet(); // extract sources from expression
-    for(QMap<int, BotReader *>::iterator it = d->readersMap.begin(); it != d->readersMap.end(); ++it) {
+    for(QMap<int, BotReader *>::const_iterator it = d->readersMap.begin(); it != d->readersMap.end(); ++it) {
         if(it.key() == user_id && it.value()->sameSourcesAs(srcs) && it.value()->host() == host
                 && expression == it.value()->source()) {
             return *it;
@@ -173,11 +173,11 @@ bool BotMonitor::stopAll(int chat_id, const QStringList &srcs)
                 qDebug() << __PRETTY_FUNCTION__ << chat_id << "match" << srcs[i];
             }
             if(delet){
+                it.remove();
                 emit stopped(r->userId(), chat_id, r->source(), r->command(), r->host(), "user request");
                 r->deleteLater();
             }
         }
-        it.remove();
     }
     if(!delet)
         d->msg = "BotMonitor.stop: none of the sources matching one of the patterns"
@@ -317,7 +317,6 @@ void BotMonitor::m_onLastUpdate(int chat_id, const CuData &)
 {
     BotReader *reader = qobject_cast<BotReader *>(sender());
     emit stopped(reader->userId(), chat_id, reader->source(), reader->command(), reader->host(), "end of TTL");
-    reader->deleteLater();
 
     QMutableMapIterator<int, BotReader *> it(d->readersMap); // multimap
     while(it.hasNext()) {
@@ -325,6 +324,7 @@ void BotMonitor::m_onLastUpdate(int chat_id, const CuData &)
         if(it.value() == reader)
             it.remove();
     }
+    reader->deleteLater();
 }
 
 void BotMonitor::m_onReaderModeChanged(BotReader::RefreshMode rm)
