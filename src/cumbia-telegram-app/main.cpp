@@ -1,4 +1,4 @@
-#include <QApplication>
+#include <QCoreApplication>
 #include "cubotserver.h"
 #include <QtDebug>
 #include <QTimer>

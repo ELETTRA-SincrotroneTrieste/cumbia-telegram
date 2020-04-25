@@ -117,8 +117,8 @@ bool CuBotServer::event(QEvent *e)
         editMsgE->accept();
     }
     else if(e->type() == EventTypes::type(EventTypes::SendPicRequest)) {
-        CuBotServerSendPicEvent *sendPicE = static_cast<CuBotServerSendPicEvent *>(e);
-        d->bot_sender->sendPic(sendPicE->chat_id, sendPicE->img_ba);
+        CuBotServerMakeD3JsPlotUrl *sendPicE = static_cast<CuBotServerMakeD3JsPlotUrl *>(e);
+        d->bot_sender->sendMessage(sendPicE->chat_id, sendPicE->jsplot_url, true);
         sendPicE->accept();
     }
     else if(e->type() == EventTypes::type(EventTypes::AddStatsRequest)) {
@@ -486,9 +486,9 @@ void CuBotServer::onStatsUpdateRequest(int chat_id, const CuData &data)
     qApp->postEvent(this, new CuBotServerAddStatsEvent(chat_id, data));
 }
 
-void CuBotServer::onSendPictureRequest(int chat_id, const QByteArray &pic_ba)
+void CuBotServer::onPlotRequest(int chat_id, const QString &csvfilenam)
 {
-    qApp->postEvent(this, new CuBotServerSendPicEvent(chat_id, pic_ba));
+    qApp->postEvent(this, new CuBotServerMakeD3JsPlotUrl(chat_id, csvfilenam));
 }
 
 

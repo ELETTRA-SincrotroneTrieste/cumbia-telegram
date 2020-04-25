@@ -17,10 +17,9 @@ BotPlotGenerator::~BotPlotGenerator()
     printf("\e[1;31m~BotPlotGenerator %p\e[0m\n", this);
 }
 
-QByteArray BotPlotGenerator::generate() const
+QString BotPlotGenerator::generate() const
 {
-    QByteArray ba = BotPlot().drawPlot(m_source, m_data);
-    return ba;
+    return BotPlot().toCsv(m_source, m_data);
 }
 
 

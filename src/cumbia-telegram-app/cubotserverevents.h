@@ -37,11 +37,11 @@ public:
     int chat_id, key, message_id;
 };
 
-class CuBotServerSendPicEvent : public QEvent {
+class CuBotServerMakeD3JsPlotUrl : public QEvent {
 public:
-    CuBotServerSendPicEvent(int cha_id, const QByteArray &img);
+    CuBotServerMakeD3JsPlotUrl(int cha_id, const QString &csv_datafilenam);
 
-    QByteArray img_ba;
+    QString jsplot_url;
     int chat_id;
 };
 

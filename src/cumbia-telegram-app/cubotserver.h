@@ -72,7 +72,7 @@ public:
     void onSendMessageRequest(int chat_id, const QString &msg, bool silent, bool wait_for_reply);
     void onEditMessageRequest(int chat_id, int key, const QString &msg, bool wait_for_reply);
     void onStatsUpdateRequest(int chat_id, const CuData& data);
-    void onSendPictureRequest(int chat_id, const QByteArray &pic_ba);
+    void onPlotRequest(int chat_id, const QString & csvfilenam);
 
     // CuBotModuleListener interface
 public:

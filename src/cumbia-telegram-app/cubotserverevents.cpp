@@ -21,11 +21,11 @@ CuBotServerSendMsgEvent::CuBotServerSendMsgEvent(int cha_id, const QString &mess
     key = akay;
 }
 
-CuBotServerSendPicEvent::CuBotServerSendPicEvent(int cha_id, const QByteArray &img)
+CuBotServerMakeD3JsPlotUrl::CuBotServerMakeD3JsPlotUrl(int cha_id, const QString &csv_datafilenam)
     : QEvent(EventTypes::type(EventTypes::SendPicRequest))
 {
     chat_id = cha_id;
-    img_ba = img;
+    jsplot_url = QString("Click <a href=\"http://gaia.elettra.trieste.it:12800?s=%1\">plot</a>").arg(csv_datafilenam);
 }
 
 CuBotServerReinjectMsgEvent::CuBotServerReinjectMsgEvent(const TBotMsg &msg)

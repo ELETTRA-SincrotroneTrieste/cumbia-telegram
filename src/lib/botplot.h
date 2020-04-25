@@ -10,7 +10,7 @@ class BotPlot
 public:
     BotPlot();
 
-    QByteArray drawPlot(const QString& src, const std::vector<double> &ve);
+    QString toCsv(const QString& src, const std::vector<double> &ve);
 
     QString error_message;
 

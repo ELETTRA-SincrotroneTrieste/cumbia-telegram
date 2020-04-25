@@ -18,7 +18,7 @@ public:
 
     ~BotPlotGenerator();
 
-    QByteArray generate() const;
+    QString generate() const;
 
     // VolatileOperation interface
 public:

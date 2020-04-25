@@ -142,7 +142,7 @@ bool BotReaderModule::process()
     else if(d->state == PlotRequest) {
         BotPlotGenerator *plotgen =  static_cast<BotPlotGenerator *> (d->volatile_ops.get(d->chat_id, BotPlotGenerator::PlotGen));
         if(plotgen) {
-            getModuleListener()->onSendPictureRequest(d->chat_id, plotgen->generate());
+            getModuleListener()->onPlotRequest(d->chat_id, plotgen->generate());
         }
         else {
             getModuleListener()->onSendMessageRequest(d->chat_id, m_plotUnavailable(), true);
