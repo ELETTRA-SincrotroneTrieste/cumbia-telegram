@@ -390,8 +390,6 @@ void BotMonitor::onSrcMonitorStarted(int user_id, int chat_id, const QString &sr
 
     printf("\e[1;32m+++ onSrcMonitorStarted success %d %d  %s %s \e[0m\n", user_id, chat_id, qstoc(src), qstoc(formula));
     BotReader *r = qobject_cast<BotReader *>(sender());
-    d->readersMap.insert(chat_id, r);
-
     const QDateTime until = QDateTime::currentDateTime().addSecs(getBotConfig()->ttl());
     BotReader::Priority pri = r->priority();
     getModuleListener()->onSendMessageRequest(chat_id, monf.monitorUntil(r->command(), until));
@@ -403,9 +401,11 @@ void BotMonitor::onSrcMonitorStarted(int user_id, int chat_id, const QString &sr
     // if database insert failed (history_idx < 0) delete the reader
 
     if(history_idx <= 0)
-        printf("\e[1;31mFUCKING SHIT!!!!!!! GONNA DELETE %p which is in FUCKIN MAP %d\e[0m\n",
-               r, d->readersMap.values(chat_id).contains(r));
-    history_idx > 0 ? r->setIndex(history_idx) : r->deleteLater();
+        r->deleteLater();
+    else {
+        d->readersMap.insert(chat_id, r);
+        r->setIndex(history_idx);
+    }
 }
 
 void BotMonitor::onSrcMonitorStartError(int chat_id, const QString &src, const QString &message)
