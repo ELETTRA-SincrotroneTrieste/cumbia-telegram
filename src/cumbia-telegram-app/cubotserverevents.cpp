@@ -25,7 +25,7 @@ CuBotServerMakeD3JsPlotUrl::CuBotServerMakeD3JsPlotUrl(int cha_id, const QString
     : QEvent(EventTypes::type(EventTypes::SendPicRequest))
 {
     chat_id = cha_id;
-    jsplot_url = QString("Click <a href=\"http://gaia.elettra.trieste.it:12800?s=%1\">plot</a>").arg(csv_datafilenam);
+    jsplot_url = QString("<a href=\"http://gaia.elettra.trieste.it:12800?s=%1\">plot</a>").arg(csv_datafilenam);
 }
 
 CuBotServerReinjectMsgEvent::CuBotServerReinjectMsgEvent(const TBotMsg &msg)

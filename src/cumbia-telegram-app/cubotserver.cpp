@@ -118,7 +118,8 @@ bool CuBotServer::event(QEvent *e)
     }
     else if(e->type() == EventTypes::type(EventTypes::SendPicRequest)) {
         CuBotServerMakeD3JsPlotUrl *sendPicE = static_cast<CuBotServerMakeD3JsPlotUrl *>(e);
-        d->bot_sender->sendMessage(sendPicE->chat_id, sendPicE->jsplot_url, true);
+        // last param false: make web preview available
+        d->bot_sender->sendMessage(sendPicE->chat_id, sendPicE->jsplot_url, true, false, -1, false);
         sendPicE->accept();
     }
     else if(e->type() == EventTypes::type(EventTypes::AddStatsRequest)) {

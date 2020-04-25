@@ -38,12 +38,12 @@ CuBotSender::CuBotSender(QObject *parent, const QString& bot_tok) : QObject(pare
     d->key = bot_tok;
 }
 
-void CuBotSender::sendMessage(int chat_id, const QString &msg, bool silent, bool wait_for_reply, int key)
+void CuBotSender::sendMessage(int chat_id, const QString &msg, bool silent, bool wait_for_reply, int key, bool disable_web_preview)
 {
     QUrlQuery params;
     if(silent)
         params.addQueryItem("disable_notification", "true");
-    m_do_sendMsg(chat_id, key, "sendMessage", msg, params, wait_for_reply);
+    m_do_sendMsg(chat_id, key, "sendMessage", msg, params, wait_for_reply, disable_web_preview);
 }
 
 void CuBotSender::editMessage(int chat_id, int key, const QString &msg, int msg_id, bool wait_for_reply)
@@ -55,7 +55,7 @@ void CuBotSender::editMessage(int chat_id, int key, const QString &msg, int msg_
 
 void CuBotSender::m_do_sendMsg(int chat_id, int key, const QString& method,
                                const QString &msg, QUrlQuery &params,
-                               bool wait_for_reply)
+                               bool wait_for_reply, bool disable_web_preview)
 {
     QString u = QString("https://api.telegram.org/%1/%2").arg(d->key).arg(method);
     params.addQueryItem("chat_id", QString::number(chat_id));
@@ -68,7 +68,7 @@ void CuBotSender::m_do_sendMsg(int chat_id, int key, const QString& method,
     }
 
     // disable link preview (currently only help would contain links)
-    params.addQueryItem("disable_web_page_preview", "true");
+    params.addQueryItem("disable_web_page_preview", disable_web_preview ? "true" : "false");
 
     QUrl url(u);
     url.setQuery(params);

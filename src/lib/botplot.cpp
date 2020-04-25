@@ -16,7 +16,8 @@ QString BotPlot::toCsv(const QString &src, const std::vector<double> &ve)
     error_message = QString();
     QByteArray ba;
     QString fna = QString("plot_%1.csv").arg(QDateTime::currentDateTime().toMSecsSinceEpoch());
-    QFile f(fna);
+    QString fpath = "/home/test/devel/cumbia-telegram/d3plots/" + fna;
+    QFile f(fpath);
     if(f.open(QIODevice::WriteOnly)) {
         QTextStream out(&f);
         out << "xval,yval\n";
