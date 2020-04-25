@@ -256,13 +256,9 @@ int BotDb::addToHistory(const HistoryEntry &in, BotConfig *bconf)
         QMap<QString, int> typesMap;
         QSqlQuery typesQ(m_db);
         m_err = !typesQ.exec("SELECT _rowid_,type from history_types");
-        if(!m_err && !typesQ.next()) {
-            perr("BotDb::addToHistory: no registered history types: be sure to call registerHistoryType for "
-                 "modules whose commands need to be recorded on the database (monitor, alert, read...)");
-            return false;
-        }
         while(!m_err && typesQ.next())
             typesMap.insert(typesQ.value(1).toString(), typesQ.value(0).toInt());
+        m_err = typesMap.isEmpty();
         if(m_err) {
             this->m_setErrorMessage("BotDb.addToHistory", typesQ);
             return false;
