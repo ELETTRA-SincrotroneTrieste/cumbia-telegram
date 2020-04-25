@@ -268,6 +268,7 @@ int BotDb::addToHistory(const HistoryEntry &in, BotConfig *bconf)
             return false;
         }
 
+        qDebug() << __PRETTY_FUNCTION__ << "hitoru types" >> typesMap;
         QSqlQuery bookmarks_q(m_db);
         m_err = !bookmarks_q.exec("SELECT history_rowid FROM bookmarks");
         QList<int> bookmarks_idxs; // list of history._rowid_ that are bookmarked
