@@ -310,7 +310,7 @@ int BotDb::addToHistory(const HistoryEntry &in, BotConfig *bconf)
                     QString timestamp_str = q.value(0).toDateTime().toString("yyyy-MM-dd hh:mm:ss");
                     int history_idx = q.value(1).toInt();
                     // we delete older rows
-                    m_err = !delq.exec(QString("DELETE FROM history WHERE user_id=%1 AND timestamp='%2' "
+                     m_err = !delq.exec(QString("DELETE FROM history WHERE user_id=%1 AND timestamp='%2' "
                                                "AND h_idx=%3")
                                        .arg(uid).arg(timestamp_str).arg(history_idx));
                     if(m_err) {
