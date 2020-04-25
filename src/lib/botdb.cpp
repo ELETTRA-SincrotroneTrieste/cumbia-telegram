@@ -293,6 +293,7 @@ int BotDb::addToHistory(const HistoryEntry &in, BotConfig *bconf)
             m_err = !q.exec(QString("SELECT timestamp,h_idx,_rowid_,stop_timestamp FROM history WHERE "
                 " user_id=%1 AND type=%2 ORDER BY timestamp DESC").arg(uid).arg(typesMap[htype]));
 
+            printf("BotDb.addToHistory executed %s\n", qstoc(q.lastQuery()));
             // go through all the history entries that are not running monitors or alerts
             while(q.next()) {
                 int history_rowid = q.value(2).toInt();
@@ -323,6 +324,8 @@ int BotDb::addToHistory(const HistoryEntry &in, BotConfig *bconf)
             } // end while(q.next())
 
 
+            printf("BotDb.addToHistory: m_err %d htype %s in.type %s dafuq is this shit\n",
+                   m_err, qstoc(htype), qstoc(in.type));
             if(!m_err && htype == in.type) {
                 qDebug() << __PRETTY_FUNCTION__ << "finding available idxs in " << h_idxs;
                 // calculate first per history index available
