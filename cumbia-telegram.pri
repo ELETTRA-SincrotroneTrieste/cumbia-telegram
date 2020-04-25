@@ -121,3 +121,6 @@ else {
 
 
 QT -= gui widgets
+
+DISTFILES += \
+    $$PWD/src/d3plots/index.php

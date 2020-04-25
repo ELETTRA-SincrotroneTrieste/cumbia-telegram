@@ -148,8 +148,18 @@ int BotMonitor::maxAveragePollingPeriod() const
     return d->max_avg_poll_period;
 }
 
+/*!
+ * \brief BotMonitor::stopAll stop either the specified sources or all sources
+ * \param chat_id the chad id
+ * \param srcs list of sources to stop. If empty, all sources for chat_id are deleted
+ * \return true if stopped, false otherwise
+ *
+ * \note If one of srcs is one of the sources used by the reader (i.e. reader with formula), the
+ * reader is stopped.
+ */
 bool BotMonitor::stopAll(int chat_id, const QStringList &srcs)
 {
+    bool delet;
     qDebug() << __PRETTY_FUNCTION__ << chat_id << srcs;
     d->err = !d->readersMap.contains(chat_id);
     QMutableMapIterator<int, BotReader *> it(d->readersMap); // multimap
@@ -157,17 +167,19 @@ bool BotMonitor::stopAll(int chat_id, const QStringList &srcs)
         it.next();
         if(it.key() == chat_id) {
             BotReader *r = it.value();
-            for(int i = 0; i < srcs.size(); i++) {
-                if(r->sourceMatch(srcs[i])) {
-                    qDebug() << __PRETTY_FUNCTION__ << chat_id << "match" << srcs[i];
-                    emit stopped(r->userId(), chat_id, r->source(), r->command(), r->host(), "user request");
-                    r->deleteLater();
-                }
+            delet = srcs.isEmpty();
+            for(int i = 0; !delet && i < srcs.size(); i++) {
+                delet = r->sourceMatch(srcs[i]);
+                qDebug() << __PRETTY_FUNCTION__ << chat_id << "match" << srcs[i];
             }
-            it.remove();
+            if(delet){
+                emit stopped(r->userId(), chat_id, r->source(), r->command(), r->host(), "user request");
+                r->deleteLater();
+            }
         }
+        it.remove();
     }
-    if(d->err)
+    if(!delet)
         d->msg = "BotMonitor.stop: none of the sources matching one of the patterns"
                  " \"" + srcs.join(", ") + "\" are monitored";
     return !d->err;
