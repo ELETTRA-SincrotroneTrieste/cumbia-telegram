@@ -159,7 +159,7 @@ int BotMonitor::maxAveragePollingPeriod() const
  */
 bool BotMonitor::stopAll(int chat_id, const QStringList &srcs)
 {
-    bool delet;
+    bool delet = false;
     qDebug() << __PRETTY_FUNCTION__ << chat_id << srcs;
     d->err = !d->readersMap.contains(chat_id);
     QMutableMapIterator<int, BotReader *> it(d->readersMap); // multimap
@@ -401,6 +401,10 @@ void BotMonitor::onSrcMonitorStarted(int user_id, int chat_id, const QString &sr
     int history_idx = getDb()->addToHistory(he, getBotConfig()); // returns the index of the history table
     // set the index of the reader according to the index in the database table
     // if database insert failed (history_idx < 0) delete the reader
+
+    if(history_idx <= 0)
+        printf("\e[1;31mFUCKING SHIT!!!!!!! GONNA DELETE %p which is in FUCKIN MAP %d\e[0m\n",
+               r, d->readersMap.values(chat_id).contains(r));
     history_idx > 0 ? r->setIndex(history_idx) : r->deleteLater();
 }
 
