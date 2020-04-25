@@ -29,7 +29,7 @@ d3.csv(window.location.search.split('=')[1],
   // When reading the csv, I must format variables:
   function(d){
   console.log(d.xvalue, d.value)
-    return { xval : d.date, value : d.value }
+    return { xval : d.xval, value : d.yval }
   },
 
   // Now I can use this dataset:
