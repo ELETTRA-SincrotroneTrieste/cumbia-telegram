@@ -1,11 +1,16 @@
 #
+
+#
 #                              ###################################################################
 #
 #                                                         customization section start
 #
-
-INSTALL_ROOT = /usr/local/cumbia-telegram
-CUMBIA_QTCONTROLS_ROOT=/usr/local/cumbia-libs
+isEmpty(INSTALL_ROOT) {
+	INSTALL_ROOT = /usr/local/cumbia-telegram
+}
+isEmpty(CUMBIA_ROOT) {
+	CUMBIA_ROOT=/usr/local/cumbia-libs
+}
 #
 SHAREDIR = $${INSTALL_ROOT}/share
 DOCDIR = $${SHAREDIR}/doc

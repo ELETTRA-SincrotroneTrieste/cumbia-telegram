@@ -26,9 +26,17 @@ SOURCES += \
     src/dbctrl.cpp
 
 # Default rules for deployment.
-qnx: target.path = /tmp/$${TARGET}/bin
-else: unix:!android: target.path = /opt/$${TARGET}/bin
-!isEmpty(target.path): INSTALLS += target
+
+!isEmpty(INSTALL_ROOT) {
+	target.path=$${INSTALL_ROOT}/bin
+	INSTALLS += target
+} else {
+
+message("-")
+message("cumbia-telegram-control: if you want to install the application please")
+message("specify INSTALL_ROOT. The binary will be installed under $INSTALL_ROOT/bin")
+message("-")
+}
 
 HEADERS += \
     src/cutelegramctrl.h \
