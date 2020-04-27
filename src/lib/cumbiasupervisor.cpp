@@ -49,11 +49,16 @@ void CumbiaSupervisor::setup()
         // (?:[A-Za-z0-9]+\:\d+)/[A-Za-z0-9_\.\-]+/[A-Za-z0-9_\.\-]+/[A-Za-z0-9_\.\-]+/[A-Za-z0-9_\.\-]+
         const char *h_p = "(?:[A-Za-z0-9\\.\\-_]+\\:\\d+)"; // host pattern e.g. hokuto:20000
         const char *t_p = "[A-Za-z0-9_\\.\\-]+"; // t_p tango pattern
-        QString a_p = QString("%1/%1/%1/%1").arg(t_p); // a_p  attribute pattern
-        QString h_a_p = QString("%1/%2/%2/%2/%2").arg(h_p).arg(t_p);
+        const char *t_args = "(?:\\([A-Za-z0-9,_\\-\\.\\s]+\\)){0,1}";   // optional args, e.g. (0,100)
+        QString a_p = QString("%1/%1/%1/%1%2").arg(t_p).arg(t_args); // a_p  attribute pattern
+        QString c_p = QString("%1/%1/%1\\->%1%2").arg(t_p).arg(t_args); // c_p command pattern
+        QString h_a_p = QString("%1/%2/%2/%2/%2%3").arg(h_p).arg(t_p).arg(t_args);
+        QString h_c_p = QString("%1/%2/%2/%2\\->%2%3").arg(h_p).arg(t_p).arg(t_args); // host + command + args
         std::vector<std::string> tg_patterns;
         tg_patterns.push_back(h_a_p.toStdString());
         tg_patterns.push_back(a_p.toStdString());
+        tg_patterns.push_back(c_p.toStdString());
+        tg_patterns.push_back(h_c_p.toStdString());
 
 #ifdef HAS_QUMBIA_TANGO_CONTROLS
         CumbiaTango* cuta = new CumbiaTango(new CuThreadFactoryImpl(), new QThreadsEventBridgeFactory());

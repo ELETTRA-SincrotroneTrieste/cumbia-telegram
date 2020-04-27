@@ -874,6 +874,11 @@ QList<int> BotDb::getChatsWithActiveMonitors()
     return ids;
 }
 
+bool BotDb::canWrite(int user_id)  {
+    printf("\e[1;31mBotDb.canWrite: returns true for now! USER ID %d\e[0m\n", user_id);
+    return true;
+}
+
 const QSqlDatabase *BotDb::getSqlDatabase() const
 {
     return &m_db;

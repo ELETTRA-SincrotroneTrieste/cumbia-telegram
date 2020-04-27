@@ -18,6 +18,7 @@ Possible candidates:
 
 /archivi/devel/utils/git/cppqtclients/cumbia-telegram/src/cumbia-telegram-app/modules/alias_mod.h:36: warning: The following parameter of AliasModule::getAlias(int user_id, const QString &name, const QSqlDatabase &m_db) is not documented:
   parameter 'm_db'
-/archivi/devel/utils/git/cppqtclients/cumbia-telegram/src/cumbia-telegram-app/cubotsender.h:26: warning: The following parameters of CuBotSender::sendMessage(int chat_id, const QString &msg, bool silent=false, bool wait_for_reply=false, int key=-1) are not documented:
+/archivi/devel/utils/git/cppqtclients/cumbia-telegram/src/cumbia-telegram-app/cubotsender.h:26: warning: The following parameters of CuBotSender::sendMessage(int chat_id, const QString &msg, bool silent=false, bool wait_for_reply=false, int key=-1, bool disable_web_preview=true) are not documented:
   parameter 'wait_for_reply'
   parameter 'key'
+  parameter 'disable_web_preview'

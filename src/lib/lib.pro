@@ -54,6 +54,7 @@ SOURCES += \
     cubotmodule.cpp \
     botreadquality.cpp \
     botreader.cpp \
+    botwriter.cpp \
     datamsgformatter.cpp \
     cumbiasupervisor.cpp \
     botplot.cpp \
@@ -77,6 +78,7 @@ HEADERS += \
     historyentry.h \
     botreadquality.h \
     botreader.h \
+    botwriter.h \
     datamsgformatter.h \
     cumbiasupervisor.h \
     botplot.h \
