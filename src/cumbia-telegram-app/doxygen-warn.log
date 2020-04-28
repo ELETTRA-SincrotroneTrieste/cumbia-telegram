@@ -1,23 +1,24 @@
 warning: source examples is not a readable file or directory... skipping.
 warning: source examples/view is not a readable file or directory... skipping.
 warning: source screenshots is not a readable file or directory... skipping.
-error: Tag file '../qumbia-tango-controls/doc/qumbia-tango-controls.tag' does not exist or is not a file. Skipping it...
-error: Tag file '../cumbia/doc/cumbia.tag' does not exist or is not a file. Skipping it...
-error: Tag file '../cumbia-tango/doc/cumbia-tango.tag' does not exist or is not a file. Skipping it...
-error: Tag file '../cumbia-epics/doc/cumbia-epics.tag' does not exist or is not a file. Skipping it...
-error: Tag file '../qumbia-epics-controls/doc/qumbia-epics-controls.tag' does not exist or is not a file. Skipping it...
-/archivi/devel/utils/git/cppqtclients/cumbia-telegram/src/cumbia-telegram-app/qrc_cumbia-telegram.cpp:623: warning: no matching file member found for 
-int QT_RCC_MANGLE_NAMESPACE
+error: Tag file `../qumbia-tango-controls/doc/qumbia-tango-controls.tag' does not exist or is not a file. Skipping it...
+error: Tag file `../cumbia/doc/cumbia.tag' does not exist or is not a file. Skipping it...
+error: Tag file `../cumbia-tango/doc/cumbia-tango.tag' does not exist or is not a file. Skipping it...
+error: Tag file `../cumbia-epics/doc/cumbia-epics.tag' does not exist or is not a file. Skipping it...
+error: Tag file `../qumbia-epics-controls/doc/qumbia-epics-controls.tag' does not exist or is not a file. Skipping it...
+/home/test/devel/cumbia-telegram/src/cumbia-telegram-app/qrc_cumbia-telegram.cpp:624: warning: no matching file member found for 
+int QT_RCC_MANGLE_NAMESPACE()
 Possible candidates:
- '#define QT_RCC_MANGLE_NAMESPACE(name)' at line 608 of file /archivi/devel/utils/git/cppqtclients/cumbia-telegram/src/cumbia-telegram-app/qrc_cumbia-telegram.cpp
+ '#define QT_RCC_MANGLE_NAMESPACE(name)' at line 608 of file/home/test/devel/cumbia-telegram/src/cumbia-telegram-app/qrc_cumbia-telegram.cpp
 
-/archivi/devel/utils/git/cppqtclients/cumbia-telegram/src/cumbia-telegram-app/qrc_cumbia-telegram.cpp:632: warning: no matching file member found for 
-int QT_RCC_MANGLE_NAMESPACE
+/home/test/devel/cumbia-telegram/src/cumbia-telegram-app/qrc_cumbia-telegram.cpp:632: warning: no matching file member found for 
+int QT_RCC_MANGLE_NAMESPACE()
 Possible candidates:
- '#define QT_RCC_MANGLE_NAMESPACE(name)' at line 608 of file /archivi/devel/utils/git/cppqtclients/cumbia-telegram/src/cumbia-telegram-app/qrc_cumbia-telegram.cpp
+ '#define QT_RCC_MANGLE_NAMESPACE(name)' at line 608 of file/home/test/devel/cumbia-telegram/src/cumbia-telegram-app/qrc_cumbia-telegram.cpp
 
-/archivi/devel/utils/git/cppqtclients/cumbia-telegram/src/cumbia-telegram-app/modules/alias_mod.h:36: warning: The following parameter of AliasModule::getAlias(int user_id, const QString &name, const QSqlDatabase &m_db) is not documented:
+/home/test/devel/cumbia-telegram/src/cumbia-telegram-app/modules/alias_mod.h:36: warning: The following parameters of AliasModule::getAlias(int user_id, const QString &name, const QSqlDatabase &m_db) are not documented:
   parameter 'm_db'
-/archivi/devel/utils/git/cppqtclients/cumbia-telegram/src/cumbia-telegram-app/cubotsender.h:26: warning: The following parameters of CuBotSender::sendMessage(int chat_id, const QString &msg, bool silent=false, bool wait_for_reply=false, int key=-1) are not documented:
+/home/test/devel/cumbia-telegram/src/cumbia-telegram-app/cubotsender.h:26: warning: The following parameters of CuBotSender::sendMessage(int chat_id, const QString &msg, bool silent=false, bool wait_for_reply=false, int key=-1, bool disable_web_preview=true) are not documented:
   parameter 'wait_for_reply'
   parameter 'key'
+  parameter 'disable_web_preview'

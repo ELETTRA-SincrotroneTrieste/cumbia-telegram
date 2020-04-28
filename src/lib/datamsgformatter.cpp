@@ -53,7 +53,7 @@ QString DataMsgFormatter::fromData_msg(const CuData &d, FormatOption f, const QS
             d.containsKey("print_format") && !d.containsKey("values") ? value_str = va.toString(&ok, d["print_format"].toString().c_str()) :
                 value_str = va.toString();
             QString v_str = QString::fromStdString(value_str);
-            if(v_str.length() > MAXVALUELEN - 3) {
+            if((va.isInteger() || va.isFloatingPoint() ) &&  v_str.length() > MAXVALUELEN - 3) {
                 v_str.truncate(MAXVALUELEN-3);
                 v_str += "...";
             }
@@ -162,11 +162,13 @@ QString DataMsgFormatter::timeRepr(const QDateTime &dt) const
 QString DataMsgFormatter::getVectorInfo(const CuVariant &v)
 {
     QString s;
-    std::vector<double> vd;
-    v.toVector<double>(vd);
-    auto minmax = std::minmax_element(vd.begin(),vd.end());
-    s += QString("vector size: <b>%1</b> min: <b>%2</b> max: <b>%3</b>").arg(vd.size())
-            .arg(*minmax.first).arg(*minmax.second);
+    if(v.isInteger() || v.isFloatingPoint()) {
+	    std::vector<double> vd;
+	    v.toVector<double>(vd);
+	    auto minmax = std::minmax_element(vd.begin(),vd.end());
+	    s += QString("vector size: <b>%1</b> min: <b>%2</b> max: <b>%3</b>").arg(vd.size())
+        	    .arg(*minmax.first).arg(*minmax.second);
+    }
     return s;
 }
 
