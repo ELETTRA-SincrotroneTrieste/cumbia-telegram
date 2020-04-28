@@ -83,6 +83,7 @@ public:
 
     const QSqlDatabase *getSqlDatabase() const;
 
+    bool canWrite(int user_id);
 private:
     QSqlDatabase m_db;
     bool m_err;

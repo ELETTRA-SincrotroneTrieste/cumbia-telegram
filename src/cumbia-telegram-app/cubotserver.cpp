@@ -17,6 +17,7 @@
 #include "modules/alias_mod.h"
 #include "monitorhelper.h"
 #include "botreader_mod.h"
+#include "botwriter_mod.h"
 #include "host_mod.h"
 #include "help_mod.h"
 #include "cubotmsgtracker.h"
@@ -330,6 +331,10 @@ void CuBotServer::m_loadModules()
     HostMod *hostMod = new HostMod(this, d->bot_db, d->botconf);
     m_registerModule(hostMod);
     d->bot_db->registerHistoryType("host", "host settings");
+
+    // writer
+    BotWriterMod *botwriter_mod = new BotWriterMod(this, d->cu_supervisor, this, d->bot_db, d->botconf);
+    m_registerModule(botwriter_mod);
 }
 
 void CuBotServer::m_loadPlugins(QMap<int, QString> &pluginsonames_map)

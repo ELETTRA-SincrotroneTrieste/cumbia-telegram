@@ -57,6 +57,7 @@ SOURCES += \
     cubotserverevents.cpp \
     modules/botmonitor_mod.cpp \
     modules/botreader_mod.cpp \
+    modules/botwriter_mod.cpp \
     modules/moduleutils.cpp \
     modules/botmonitor_mod_msgformatter.cpp \
     modules/host_mod.cpp \
@@ -67,7 +68,6 @@ SOURCES += \
 HEADERS += \
     ../cumbia-telegram-doc.h \
     ../../cumbia-telegram-defs.h \
-    \
     cubotserver.h \
     cubotlistener.h \
  #   tbotmsgdecoder.h \
@@ -82,6 +82,7 @@ HEADERS += \
     modules/alias_mod.h \
     modules/botmonitor_mod.h \
     modules/botreader_mod.h \
+    modules/botwriter_mod.h \
     modules/moduleutils.h \
     modules/botmonitor_mod_msgformatter.h \
     modules/host_mod.h \
