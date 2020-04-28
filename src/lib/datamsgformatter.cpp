@@ -163,11 +163,11 @@ QString DataMsgFormatter::getVectorInfo(const CuVariant &v)
 {
     QString s;
     if(v.isInteger() || v.isFloatingPoint()) {
-	    std::vector<double> vd;
-	    v.toVector<double>(vd);
-	    auto minmax = std::minmax_element(vd.begin(),vd.end());
-	    s += QString("vector size: <b>%1</b> min: <b>%2</b> max: <b>%3</b>").arg(vd.size())
-        	    .arg(*minmax.first).arg(*minmax.second);
+        std::vector<double> vd;
+        v.toVector<double>(vd);
+        auto minmax = std::minmax_element(vd.begin(),vd.end());
+        s += QString("vector size: <b>%1</b> min: <b>%2</b> max: <b>%3</b>").arg(vd.size())
+                .arg(*minmax.first).arg(*minmax.second);
     }
     return s;
 }
